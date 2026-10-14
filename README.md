@@ -11,7 +11,7 @@ Each day has its own folder with notes, working code, tests, a QA & security rep
 3. **QA & security review** — lint, `npm audit`, static analysis (Slither / Solhint for Solidity), and a manual attack checklist
 4. **Fix & repeat** — every bug found is logged in `QA.md`, fixed, and re-tested until the suite is green
 
-**Started:** 14 October 2026 · **Ends:** 28 October 2026
+**Day 0:** 14 October 2026 · **Day 1:** 15 October 2026 · **Day 15:** 29 October 2026
 **Author:** [Manish Khadka](https://khadka-manish.com.np) · [LinkedIn](https://www.linkedin.com/in/manishkhadka1996) · [GitHub](https://github.com/Khadka1996)
 
 ---
@@ -20,26 +20,26 @@ Each day has its own folder with notes, working code, tests, a QA & security rep
 
 | Day | Date | Topic | What gets built | Status |
 |----:|------|-------|-----------------|:------:|
-| 00 | 13 Oct | [Setup](day-00) | Repo, tools, roadmap | ✅ |
-| 01 | 14 Oct | [Hashing & SHA-256](day-01) | Hash explorer in Node.js | ✅ |
+| 00 | 14 Oct | [Setup](day-00) | Repo, tools, roadmap | ✅ |
+| 01 | 15 Oct | [Hashing & SHA-256](day-01) | Hash explorer in Node.js | 🔨 |
 | **Phase 1 — Foundations** | | | | |
-| 02 | 15 Oct | Blocks, chains & Proof of Work | Mineable blockchain with tamper detection | ⏳ |
-| 03 | 16 Oct | Keys, signatures & transactions | secp256k1 wallets, signed transfers, balances | ⏳ |
-| 04 | 17 Oct | Merkle trees, forks & consensus | Merkle proofs, longest-chain rule, P2P simulation | ⏳ |
+| 02 | 16 Oct | Blocks, chains & Proof of Work | Mineable blockchain with tamper detection | ⏳ |
+| 03 | 17 Oct | Keys, signatures & transactions | secp256k1 wallets, signed transfers, balances | ⏳ |
+| 04 | 18 Oct | Merkle trees, forks & consensus | Merkle proofs, longest-chain rule, P2P simulation | ⏳ |
 | **Phase 2 — Ethereum & Solidity** | | | | |
-| 05 | 18 Oct | Ethereum & the EVM | Accounts, gas, opcodes, storage layout — read chain data with ethers.js | ⏳ |
-| 06 | 19 Oct | Solidity fundamentals | Hardhat project, storage, events, modifiers + tests | ⏳ |
-| 07 | 20 Oct | ERC-20 tokens | Token with OpenZeppelin, allowances, fuzz tests | ⏳ |
-| 08 | 21 Oct | NFTs: ERC-721 & ERC-1155 | NFT collection with metadata + royalties | ⏳ |
+| 05 | 19 Oct | Ethereum & the EVM | Accounts, gas, opcodes, storage layout — read chain data with ethers.js | ⏳ |
+| 06 | 20 Oct | Solidity fundamentals | Hardhat project, storage, events, modifiers + tests | ⏳ |
+| 07 | 21 Oct | ERC-20 tokens | Token with OpenZeppelin, allowances, fuzz tests | ⏳ |
+| 08 | 22 Oct | NFTs: ERC-721 & ERC-1155 | NFT collection with metadata + royalties | ⏳ |
 | **Phase 3 — Advanced** | | | | |
-| 09 | 22 Oct | Smart-contract security | Reentrancy, access control, front-running — exploit & fix, Slither | ⏳ |
-| 10 | 23 Oct | DeFi: AMM from scratch | Constant-product (x·y=k) swap pool + invariant tests | ⏳ |
-| 11 | 24 Oct | Gas optimisation & upgradeable contracts | Storage packing, custom errors, UUPS proxy | ⏳ |
-| 12 | 25 Oct | Oracles, Layer 2 & cross-chain | Price-feed consumer, rollups explained, bridge risks | ⏳ |
-| 13 | 26 Oct | Full-stack dApp | Frontend + MetaMask + Sepolia deployment | ⏳ |
-| 14 | 27 Oct | Zero-knowledge & account abstraction | ZK proof basics (circom), ERC-4337 smart wallets | ⏳ |
+| 09 | 23 Oct | Smart-contract security | Reentrancy, access control, front-running — exploit & fix, Slither | ⏳ |
+| 10 | 24 Oct | DeFi: AMM from scratch | Constant-product (x·y=k) swap pool + invariant tests | ⏳ |
+| 11 | 25 Oct | Gas optimisation & upgradeable contracts | Storage packing, custom errors, UUPS proxy | ⏳ |
+| 12 | 26 Oct | Oracles, Layer 2 & cross-chain | Price-feed consumer, rollups explained, bridge risks | ⏳ |
+| 13 | 27 Oct | Full-stack dApp | Frontend + MetaMask + Sepolia deployment | ⏳ |
+| 14 | 28 Oct | Zero-knowledge & account abstraction | ZK proof basics (circom), ERC-4337 smart wallets | ⏳ |
 | **Phase 4 — Capstone** | | | | |
-| 15 | 28 Oct | Capstone + self-audit | On-chain certificate verification dApp + audit report + retrospective | ⏳ |
+| 15 | 29 Oct | Capstone + self-audit | On-chain certificate verification dApp + audit report + retrospective | ⏳ |
 
 ---
 
