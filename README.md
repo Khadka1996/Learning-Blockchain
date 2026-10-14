@@ -13,8 +13,8 @@ Each day has its own folder with notes, working code and exercises. Mornings cov
 
 | Day | Date | Topic | What gets built | Status |
 |----:|------|-------|-----------------|:------:|
-| 00 | 13 Oct | Setup | Repo, tools, roadmap | ✅ |
-| 01 | 14 Oct | Hashing & SHA-256 | Hash explorer in Node.js | ⏳ |
+| 00 | 13 Oct | [Setup](day-00) | Repo, tools, roadmap | ✅ |
+| 01 | 14 Oct | [Hashing & SHA-256](day-01) | Hash explorer in Node.js | ✅ |
 | 02 | 15 Oct | Blocks & chains | A minimal blockchain in JavaScript | ⏳ |
 | 03 | 16 Oct | Proof of Work | Mining with adjustable difficulty | ⏳ |
 | 04 | 17 Oct | Keys & wallets | Generate key pairs, sign and verify | ⏳ |

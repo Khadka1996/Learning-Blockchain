@@ -1,0 +1,14 @@
+{
+  "name": "day-01-hashing",
+  "version": "1.0.0",
+  "description": "Day 01 of Learning Blockchain — SHA-256 hashing fundamentals",
+  "private": true,
+  "scripts": {
+    "start": "node src/hash.js",
+    "avalanche": "node src/avalanche.js",
+    "preimage": "node src/preimage.js 5",
+    "fingerprint": "node src/file-fingerprint.js package.json"
+  },
+  "author": "Manish Khadka",
+  "license": "MIT"
+}
