@@ -1,6 +1,6 @@
 {
   "name": "day-01-hashing",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Day 01 of Learning Blockchain — SHA-256 hashing fundamentals",
   "private": true,
   "engines": {
@@ -11,7 +11,11 @@
     "avalanche": "node src/avalanche.js",
     "avalanche:stats": "node src/avalanche.js --stats 10000",
     "preimage": "node src/preimage.js 5",
+    "preimage:table": "node src/preimage.js --table 5",
     "fingerprint": "node src/file-fingerprint.js package.json",
+    "ex:easy": "node exercises/solutions/tampered.js",
+    "ex:medium": "node exercises/solutions/genesis.js",
+    "ex:challenge": "node exercises/solutions/commit-reveal.js",
     "test": "node --test",
     "lint": "eslint ."
   },

@@ -6,7 +6,7 @@
 "use strict";
 
 const { randomBytes } = require("crypto");
-const { avalanche, HASH_BITS } = require("./lib");
+const { avalanche, toWholeNumber, HASH_BITS } = require("./lib");
 
 /** Average bits flipped over `trials` random messages, each with one character changed. */
 function stats(trials) {
@@ -28,7 +28,7 @@ function stats(trials) {
 
 function main(argv) {
   if (argv[0] === "--stats") {
-    const trials = Number(argv[1] || 10000);
+    const trials = argv[1] === undefined ? 10000 : toWholeNumber(argv[1]); // "0x10", "1e2" rejected (E4)
     if (!Number.isInteger(trials) || trials < 1 || trials > 1e7) {
       throw new RangeError("trials must be a whole number from 1 to 10,000,000");
     }

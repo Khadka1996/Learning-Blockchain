@@ -21,7 +21,7 @@ Each day has its own folder with notes, working code, tests, a QA & security rep
 | Day | Date | Topic | What gets built | Status |
 |----:|------|-------|-----------------|:------:|
 | 00 | 14 Oct | [Setup](day-00) | Repo, tools, roadmap | ✅ |
-| 01 | 15 Oct | [Hashing & SHA-256](day-01) | Hash explorer in Node.js | 🔨 |
+| 01 | 15 Oct | [Hashing & SHA-256](day-01) | Hash explorer in Node.js | ✅ |
 | **Phase 1 — Foundations** | | | | |
 | 02 | 16 Oct | Blocks, chains & Proof of Work | Mineable blockchain with tamper detection | ⏳ |
 | 03 | 17 Oct | Keys, signatures & transactions | secp256k1 wallets, signed transfers, balances | ⏳ |

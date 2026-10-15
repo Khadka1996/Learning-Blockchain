@@ -44,3 +44,48 @@ eslint: 0 problems
 $ npm audit --omit=dev
 found 0 vulnerabilities
 ```
+
+---
+
+## Evening audit
+
+**Reviewer stance:** external auditor, fresh eyes, assuming the morning author missed things.
+**Scope:** everything in `src/` after the morning fixes, plus the new evening code (`preimage --table`, exercise solutions).
+**Method:** re-ran tests / ESLint / `npm audit`; then attacked each entry point with malformed Unicode, odd number formats, wrong JS types, FIFOs and symlinks, and a simulated file-swap race. Every real issue got a failing test **first** ([`test/evening-audit.test.js`](test/evening-audit.test.js)), then the fix. No Solidity today, so Slither / Solhint do not apply.
+**Rounds:** 3 (round 1: 5 findings; round 2: fallback path for Node 18, empty files, symlinked pipes, CLI encoding → 1 known issue; round 3: clean).
+
+| ID | Severity | How found | Description | Fix | Proving test |
+|----|----------|-----------|-------------|-----|--------------|
+| E1 | Medium | Manual (Unicode fuzzing) | **Real hash collision in the string API.** A lone UTF-16 surrogate has no UTF-8 form, so Node silently replaces it with U+FFFD. `sha256Hex("\uD800")`, `sha256Hex("\uDC00")` and `sha256Hex("�")` all returned `83d544cc…`. Three different inputs, one fingerprint — exactly what a hash library must never do. The morning collision test missed it because `fc.string()` only generates ASCII. | `assertHashable` now rejects strings that are not well-formed Unicode (`String.prototype.isWellFormed`, with a `/\p{Surrogate}/u` fallback for Node 18). Bytes are unaffected. | `E1: malformed strings…`, `E1 property: any two DIFFERENT strings that are accepted never share a hash` (fast-check, 5,000 runs over surrogate-heavy strings) |
+| E2 | Low | Manual (race review) | **Time-of-check / time-of-use gap.** `hashFile` checked the *path* with `stat()`, then opened the *path* again. Swapping the file for a pipe in between brings back the F8 hang. | Open once (`O_NONBLOCK`), `fstat` the handle, stream from that same handle. | `E2: hashFile checks the file it actually opened` (simulates the race; old code hung until the 4 s timeout) |
+| E3 | Low | Manual | `node src/hash.js ""` hashed `"Hello, Blockchain!"` instead of the empty string (`"" \|\| default`). You could not hash `""` from the CLI. | Use the demo text only when **no** argument is given. | `E3: hash CLI hashes an explicit empty string…` |
+| E4 | Low | Manual | Same bug class as F9, in another place: `avalanche --stats 0x10` ran 16 trials, `--stats 1e2` ran 100; `parseZeros([5])` accepted an array. | One shared `toWholeNumber()` parser (numbers must be integers; strings plain decimal digits; every other type rejected), used by both CLIs. | `E4: avalanche --stats accepts only plain decimal…`, `E4: parseZeros rejects non-number, non-string types` |
+| E5 | Info | Manual | `findLeadingZeros(1, { prefix: {} })` searched for `"[object Object]0"` without complaint. | `prefix` must be a string (`TypeError` otherwise). | `E5: findLeadingZeros requires a string prefix` |
+
+### Known issues (accepted, documented)
+
+| ID | Severity | Description | Reasoning |
+|----|----------|-------------|-----------|
+| E6 | Info | Invalid UTF-8 bytes typed as a CLI argument are turned into U+FFFD by Node **before** our code runs, so `hash.js` cannot hash raw invalid bytes. | Command-line arguments are text by definition. For exact bytes, put them in a file and use `file-fingerprint.js`. |
+| E7 | Info | `preimage.js 8` is allowed and needs ~4.3 billion guesses on average (hours on a laptop). | Bounded (`maxAttempts`), user-chosen and clearly documented; it *is* the lesson — difficulty grows 16× per zero. |
+
+### Evening improvement
+
+`node src/preimage.js --table 5` (`npm run preimage:table`) now **generates** the README's difficulty table from code instead of it being typed by hand, and a test pins the first rows (23 / 193 / 13,699 attempts), so README and code can no longer drift apart.
+
+### Final green run (evening)
+
+```
+$ npm test          # 20 morning + 8 audit/improvement + 5 exercise-solution tests
+# tests 33
+# pass 33
+# fail 0
+
+$ npm run lint
+eslint: 0 problems
+
+$ npm audit --omit=dev
+found 0 vulnerabilities
+```
+
+**Result:** 0 high, 0 medium findings open. 1 medium + 3 low + 1 info fixed; 2 info accepted.

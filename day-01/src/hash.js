@@ -5,7 +5,8 @@
 const { sha256Hex, HASH_HEX_LENGTH } = require("./lib");
 
 function main(argv) {
-  const input = argv.join(" ") || "Hello, Blockchain!";
+  // Only fall back to the demo text when NO argument is given: `hash.js ""` must hash "" (audit E3).
+  const input = argv.length > 0 ? argv.join(" ") : "Hello, Blockchain!";
   const hash = sha256Hex(input);
 
   console.log("Input :", JSON.stringify(input));

@@ -10,13 +10,36 @@ const HASH_BITS = 256;
 const HASH_HEX_LENGTH = HASH_BITS / 4; // 64 hex characters
 const MAX_ZEROS = 8; // 8 leading hex zeros ≈ 4.3 billion guesses — a sane cap for a demo
 
-/** Accept only data we can hash unambiguously: strings, Buffers and Uint8Arrays. */
+/**
+ * True if a JS string is valid Unicode (no lone UTF-16 surrogates).
+ * A lone surrogate has no UTF-8 form, so Node silently replaces it with U+FFFD —
+ * meaning "\uD800", "\uDC00" and "\uFFFD" would all produce the SAME hash (audit E1).
+ */
+function isWellFormed(str) {
+  if (typeof str.isWellFormed === "function") return str.isWellFormed(); // Node 20+
+  return !/\p{Surrogate}/u.test(str); // Node 18 fallback: in /u mode only LONE surrogates match
+}
+
+/** Accept only data we can hash unambiguously: well-formed strings, Buffers and Uint8Arrays. */
 function assertHashable(input) {
   if (typeof input !== "string" && !(input instanceof Uint8Array)) {
     throw new TypeError(
       `sha256 expects a string, Buffer or Uint8Array, got ${input === null ? "null" : typeof input}`
     );
   }
+  if (typeof input === "string" && !isWellFormed(input)) {
+    throw new TypeError("sha256 expects a well-formed Unicode string (found a lone UTF-16 surrogate)");
+  }
+}
+
+/**
+ * Parse a whole number from untrusted CLI/API input. Numbers must be integers; strings must be
+ * plain decimal digits ("5" ok; "0x5", "1e3", "5abc", "" rejected). Anything else → NaN.
+ */
+function toWholeNumber(value) {
+  if (typeof value === "number") return Number.isInteger(value) ? value : NaN;
+  if (typeof value === "string" && /^\d+$/.test(value.trim())) return Number(value.trim());
+  return NaN;
 }
 
 /** SHA-256 of a string (UTF-8) or bytes → 32-byte Buffer. */
@@ -59,9 +82,7 @@ function avalanche(a, b) {
 
 /** Validate the "number of leading zeros" argument (CLI input is untrusted). */
 function parseZeros(value) {
-  const text = String(value).trim();
-  // Strings must be plain decimal digits: "5" ok; "0x5", "1e3", "5abc" rejected.
-  const n = typeof value === "number" ? value : /^\d+$/.test(text) ? Number(text) : NaN;
+  const n = toWholeNumber(value);
   if (!Number.isInteger(n) || n < 1 || n > MAX_ZEROS) {
     throw new RangeError(`zeros must be a whole number from 1 to ${MAX_ZEROS}, got "${value}"`);
   }
@@ -75,6 +96,7 @@ function parseZeros(value) {
  */
 function findLeadingZeros(zeros, { prefix = "manish-", maxAttempts = 2 ** 32 } = {}) {
   const z = parseZeros(zeros);
+  if (typeof prefix !== "string") throw new TypeError("prefix must be a string");
   if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1) {
     throw new RangeError("maxAttempts must be a positive safe integer");
   }
@@ -94,12 +116,27 @@ function findLeadingZeros(zeros, { prefix = "manish-", maxAttempts = 2 ** 32 } =
 async function hashFile(path) {
   // Only regular files: a directory errors, and a device like /dev/zero or a pipe
   // would stream forever and hang the program.
-  const info = await fs.promises.stat(path);
-  if (!info.isFile()) throw new Error(`not a regular file: ${path}`);
+  // Open ONCE and check the handle we actually read from. Checking the path with stat() and
+  // then opening the path again leaves a gap where it can be swapped for a pipe (audit E2).
+  // O_NONBLOCK stops open() itself from blocking on a FIFO that has no writer.
+  const flags = fs.constants.O_RDONLY | (fs.constants.O_NONBLOCK ?? 0);
+  const handle = await fs.promises.open(path, flags);
+  let info;
+  try {
+    info = await handle.stat();
+  } catch (e) {
+    await handle.close();
+    throw e;
+  }
+  if (!info.isFile()) {
+    await handle.close();
+    throw new Error(`not a regular file: ${path}`);
+  }
   return new Promise((resolve, reject) => {
     const hash = createHash("sha256");
     let bytes = 0;
-    fs.createReadStream(path)
+    handle
+      .createReadStream() // autoClose: the handle is closed when the stream ends or errors
       .on("data", (chunk) => {
         bytes += chunk.length;
         hash.update(chunk);
@@ -117,6 +154,8 @@ module.exports = {
   sha256Hex,
   bitsDifferent,
   avalanche,
+  isWellFormed,
+  toWholeNumber,
   parseZeros,
   findLeadingZeros,
   hashFile,
