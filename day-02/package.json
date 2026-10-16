@@ -1,0 +1,28 @@
+{
+  "name": "day-02-blocks-pow",
+  "version": "1.1.0",
+  "description": "Day 02 of Learning Blockchain \u2014 blocks, chains & Proof of Work",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/demo.js",
+    "tamper": "node src/tamper.js",
+    "difficulty": "node src/difficulty.js 20 8",
+    "retarget": "node src/retarget.js 8 100 40",
+    "ex:easy": "node exercises/solutions/find-break.js",
+    "ex:medium": "node exercises/solutions/attacker-odds.js",
+    "ex:challenge": "node exercises/solutions/bitcoin-target.js",
+    "test": "node --test",
+    "lint": "eslint ."
+  },
+  "author": "Manish Khadka",
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "fast-check": "^3.23.2",
+    "globals": "^15.15.0"
+  }
+}
