@@ -1,0 +1,8 @@
+com/learningblockchain/auth/PasswordHasher.class
+com/learningblockchain/auth/InMemoryUserRepository$StoredUser.class
+com/learningblockchain/auth/LoginRequest.class
+com/learningblockchain/auth/LoginResponse.class
+com/learningblockchain/auth/AuthService.class
+com/learningblockchain/auth/InMemoryUserRepository.class
+com/learningblockchain/auth/App.class
+com/learningblockchain/auth/LoginServer.class
