@@ -76,11 +76,26 @@ function walletFromPrivateKey(privateKeyHex) {
   return Object.freeze({
     address,
     publicKey,
-    /** Sign 32-byte-or-longer message bytes; the signature is (r ‖ s), 64 bytes, low-S. */
+    /** Sign message bytes (Buffer / Uint8Array or well-formed text); the signature is (r ‖ s), 64 bytes, low-S. */
     sign: (message) => signMessage(keyObject, message),
     toJSON: view,
     [Symbol.for("nodejs.util.inspect.custom")]: () => `Wallet ${JSON.stringify(view())}`,
   });
+}
+
+/**
+ * Message bytes for sign / verify: a Buffer / Uint8Array, or a well-formed string (UTF-8).
+ * v1 passed anything to Buffer.from: [360, 361] became the bytes of "hi" (each number mod 256),
+ * numbers / null made verify THROW, and lone surrogates "\ud800" / "\udc00" both became U+FFFD,
+ * so one signature fitted two different strings (evening audit E4, the Day 01 bug again).
+ */
+function messageBytes(message) {
+  if (message instanceof Uint8Array) return Buffer.from(message.buffer, message.byteOffset, message.byteLength);
+  if (typeof message === "string") {
+    if (!message.isWellFormed()) throw new TypeError("message text must be well-formed Unicode (no lone surrogates)");
+    return Buffer.from(message, "utf8");
+  }
+  throw new TypeError("message must be a Buffer, Uint8Array or string");
 }
 
 /** Fresh random wallet (uses the OS's secure random generator). */
@@ -101,7 +116,7 @@ function demoWallet(name) {
  * signatures (audit B4, the same "malleability" Bitcoin fixed with BIP 62/146 and Ethereum with EIP-2).
  */
 function signMessage(privateKeyObject, message) {
-  const sig = crypto.sign("sha256", Buffer.from(message), { key: privateKeyObject, dsaEncoding: "ieee-p1363" });
+  const sig = crypto.sign("sha256", messageBytes(message), { key: privateKeyObject, dsaEncoding: "ieee-p1363" });
   const r = sig.subarray(0, 32);
   let s = toBig(sig.subarray(32));
   if (s > HALF_N) s = N - s;
@@ -114,13 +129,45 @@ function verifySignature(publicKeyHex, message, signatureHex) {
   const r = BigInt("0x" + signatureHex.slice(0, 64));
   const s = BigInt("0x" + signatureHex.slice(64));
   if (r === 0n || r >= N || s === 0n || s > HALF_N) return false;
-  let key;
+  let key, bytes;
   try {
     key = publicKeyObject(publicKeyHex);
+    bytes = messageBytes(message);
   } catch {
     return false;
   }
-  return crypto.verify("sha256", Buffer.from(message), { key, dsaEncoding: "ieee-p1363" }, Buffer.from(signatureHex, "hex"));
+  return crypto.verify("sha256", bytes, { key, dsaEncoding: "ieee-p1363" }, Buffer.from(signatureHex, "hex"));
+}
+
+/**
+ * Checksummed address (evening improvement, fixes known issue K2), the EIP-55 idea:
+ * hash the lowercase address, then write letter i in UPPER case if hash nibble i is ≥ 8.
+ * EIP-55 uses Keccak-256; Node's crypto has no Keccak, so this repo uses SHA-256. Same trick,
+ * different hash, so these checksums are NOT Ethereum-compatible.
+ */
+function toChecksumAddress(address) {
+  if (!isAddress(address)) throw new TypeError("address must be 40 lowercase hex characters");
+  const h = sha256(address).toString("hex");
+  let out = "";
+  for (let i = 0; i < 40; i++) out += parseInt(h[i], 16) >= 8 ? address[i].toUpperCase() : address[i];
+  return out;
+}
+
+const isChecksumAddress = (s) => typeof s === "string" && /^[0-9a-fA-F]{40}$/.test(s) && toChecksumAddress(s.toLowerCase()) === s;
+
+/**
+ * Read an address a human typed or pasted. Mixed case must match the checksum exactly.
+ * All-lowercase has no checksum: refused unless { allowLowercase: true } (typos could not be caught).
+ */
+function parseAddress(input, { allowLowercase = false } = {}) {
+  if (typeof input !== "string" || !/^[0-9a-fA-F]{40}$/.test(input)) throw new TypeError("address must be 40 hex characters (no 0x prefix)");
+  const lower = input.toLowerCase();
+  if (input === lower) {
+    if (allowLowercase) return lower;
+    throw new RangeError("address has no checksum (all lowercase): typos cannot be detected");
+  }
+  if (toChecksumAddress(lower) !== input) throw new RangeError("address checksum does not match: probably a typo");
+  return lower;
 }
 
 module.exports = {
@@ -137,4 +184,8 @@ module.exports = {
   demoWallet,
   signMessage,
   verifySignature,
+  messageBytes,
+  toChecksumAddress,
+  isChecksumAddress,
+  parseAddress,
 };

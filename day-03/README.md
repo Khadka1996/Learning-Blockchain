@@ -69,7 +69,8 @@ npm install
 npm start          # 3 wallets, 2 signed payments, balances
 npm run attack     # Mallory tries 13 ways to steal from Sita
 npm run bench      # signing vs verifying speed
-npm test           # 26 tests: known answers, properties, fuzzed ledger invariant, attack regressions
+npm run typo       # checksummed addresses vs 10,000 random typos (evening)
+npm test           # 38 tests: known answers, properties, fuzzed ledger invariant, attack + audit regressions, exercises
 npm run lint
 ```
 
@@ -81,6 +82,8 @@ npm run lint
 | [`src/demo.js`](src/demo.js) | The story: Sita → Ram → Hari |
 | [`src/attack.js`](src/attack.js) | 13 attacks, each must be refused |
 | [`src/bench.js`](src/bench.js) | Sign/verify timing |
+| [`src/typo.js`](src/typo.js) | Evening: how often a checksummed address catches a typo |
+| [`exercises/`](exercises/) | 3 exercises with tested solutions |
 | [`test/`](test/) | Unit, property and fuzz tests, one regression test per QA finding |
 | [`QA.md`](QA.md) | Findings from attacking the code, and the fixes |
 
@@ -155,6 +158,33 @@ About 2,000 signature checks per second on one core, before any optimisation. Bi
 - [BIP 146: Dealing with signature encoding malleability (low-S)](https://github.com/bitcoin/bips/blob/master/bip-0146.mediawiki)
 - [EIP-155: Simple replay attack protection (chain id)](https://eips.ethereum.org/EIPS/eip-155) · [EIP-2: low-S rule](https://eips.ethereum.org/EIPS/eip-2)
 - [RFC 6979: Deterministic ECDSA (why the random k matters)](https://www.rfc-editor.org/rfc/rfc6979)
+
+## Evening update
+
+An independent audit this evening found **4 more issues** (1 medium, 3 low), all fixed with a failing test first. Full table in [QA.md → Evening audit](QA.md#evening-audit).
+
+- **The big one (E1): coins without a signature.** The ledger's balances, nonces and chain id were public fields. One line of code, `ledger.balances.set(mallory, 1e6)`, minted a million coins, and `ledger.chainId = "lb-testnet"` quietly switched off the cross-chain replay check from the morning. Now all state is private and frozen: the **only** way to change a balance is a signed, verified transaction.
+- **E2–E4:** `applyAll` silently skipped holes in a sparse array; a `Map` as genesis created a ledger with 0 coins; and `verify` accepted `[360, 361]` as the bytes of `"hi"` (numbers taken mod 256), let one signature fit two different broken strings, and threw on a number although documented as "never throws".
+- **Improvement: checksummed addresses** (closes known issue K2). Like Ethereum's EIP-55, some letters of the address are written in capitals according to a hash of the address, so a typo breaks the pattern. `npm run typo`:
+
+```
+Sita's address        aa8a5b204a46be63be0862c239ac0911e70f9cab
+with checksum         AA8A5b204a46BE63Be0862C239aC0911E70f9CAB
+
+One-character typos tried: 10,000
+caught by the checksum:    9,999 (99.99%)
+missed:                    1
+```
+
+- **Exercises:** [sign a note that can never be used as a payment, pick pending payments for the next block, and build a 2-of-3 shared vault](exercises/README.md).
+
+**Quality now:** 38 / 38 tests pass, ESLint clean, `npm audit` 0 vulnerabilities, 0 high / medium findings open.
+
+## What I'd explore next
+
+- **Deterministic signatures (RFC 6979)** and why a repeated random *k* leaked the PlayStation 3 signing key: implement secp256k1 point maths in BigInt and compare with Node's output (known issue K1).
+- **Schnorr signatures (BIP 340)**: Bitcoin's Taproot signatures are linear, so several signers can produce **one** combined signature (MuSig2 for n-of-n, FROST for thresholds) instead of the list of signatures in exercise 3.
+- **What the user sees when signing (EIP-712)**: typed, human-readable messages instead of raw bytes, so a wallet cannot be tricked into signing a payment it does not understand.
 
 ## Coming next
 

@@ -24,7 +24,7 @@ Each day has its own folder with notes, working code, tests, a QA & security rep
 | 01 | 15 Oct | [Hashing & SHA-256](day-01) | Hash explorer in Node.js | ✅ |
 | **Phase 1 — Foundations** | | | | |
 | 02 | 16 Oct | [Blocks, chains & Proof of Work](day-02) | Mineable blockchain with tamper detection | ✅ |
-| 03 | 17 Oct | [Keys, signatures & transactions](day-03) | secp256k1 wallets, signed transfers, balances | 🔨 |
+| 03 | 17 Oct | [Keys, signatures & transactions](day-03) | secp256k1 wallets, signed transfers, balances | ✅ |
 | 04 | 18 Oct | Merkle trees, forks & consensus | Merkle proofs, longest-chain rule, P2P simulation | ⏳ |
 | **Phase 2 — Ethereum & Solidity** | | | | |
 | 05 | 19 Oct | Ethereum & the EVM | Accounts, gas, opcodes, storage layout — read chain data with ethers.js | ⏳ |

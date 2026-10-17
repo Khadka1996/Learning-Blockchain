@@ -10,6 +10,10 @@
     "start": "node src/demo.js",
     "attack": "node src/attack.js",
     "bench": "node src/bench.js",
+    "typo": "node src/typo.js",
+    "ex:easy": "node exercises/solutions/signed-note.js",
+    "ex:medium": "node exercises/solutions/pending-pool.js",
+    "ex:challenge": "node exercises/solutions/multisig.js",
     "test": "node --test",
     "lint": "eslint ."
   },
