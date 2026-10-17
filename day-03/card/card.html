@@ -1,0 +1,68 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 1080px; height: 1350px; font-family: Inter, sans-serif; color: #fff;
+    background: #0B1F3A;
+    background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 54px 54px; padding: 72px; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; gap: 20px; }
+  .pill { background: #2563EB; padding: 10px 22px; border-radius: 999px; font-weight: 700; font-size: 26px; letter-spacing: 1px; }
+  .tag { color: #94A3B8; font-size: 26px; font-weight: 500; }
+  h1 { font-size: 76px; line-height: 1.08; font-weight: 800; margin-top: 52px; letter-spacing: -1.5px; }
+  h1 em { font-style: normal; color: #22D3EE; }
+  .viz { margin-top: 48px; background: #0F172A; border: 1px solid #1E3A5F; border-radius: 24px; padding: 34px 40px; }
+  .flow { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+  .box { flex: 1; border-radius: 16px; padding: 18px 16px; text-align: center; border: 2px solid; }
+  .box .t { font-size: 26px; font-weight: 700; }
+  .box .s { font-size: 21px; color: #94A3B8; margin-top: 6px; }
+  .key { border-color: #FDE68A; } .key .t { color: #FDE68A; }
+  .pay { border-color: #22D3EE; } .pay .t { color: #22D3EE; }
+  .pub { border-color: #4ADE80; } .pub .t { color: #4ADE80; }
+  .arrow { font-size: 34px; color: #64748B; font-weight: 700; }
+  .check { margin-top: 26px; font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; font-size: 25px; color: #CBD5E1; }
+  .check div { display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid #1E3A5F; }
+  .ok { color: #4ADE80; font-weight: 700; } .no { color: #F87171; font-weight: 700; }
+  .check b { color: #FDE68A; font-weight: 600; }
+  .stat { display: flex; align-items: baseline; gap: 18px; border-top: 1px solid #1E3A5F; padding-top: 20px; margin-top: 6px; }
+  .stat .n { font-size: 68px; font-weight: 800; color: #22D3EE; }
+  .stat .l { font-size: 27px; color: #94A3B8; }
+  ul { list-style: none; margin-top: 52px; }
+  li { font-size: 33px; color: #CBD5E1; margin-bottom: 24px; }
+  li::before { content: "→ "; color: #22D3EE; font-weight: 700; }
+  .foot { margin-top: auto; }
+  .bar { display: flex; gap: 8px; margin-bottom: 22px; }
+  .bar i { flex: 1; height: 10px; border-radius: 5px; background: #1E3A5F; }
+  .bar i.on { background: #22D3EE; }
+  .by { font-size: 22px; color: #94A3B8; display: flex; justify-content: space-between; }
+  .by b { color: #fff; }
+</style></head>
+<body>
+  <div class="top"><span class="pill">DAY 03 / 15</span><span class="tag">#LearningBlockchain · Signatures</span></div>
+  <h1>Only Sita's key can<br><em>sign</em> Sita's coins.</h1>
+  <div class="viz">
+    <div class="flow">
+      <div class="box key"><div class="t">Private key</div><div class="s">secret, like a PIN</div></div>
+      <span class="arrow">→</span>
+      <div class="box pay"><div class="t">Signed payment</div><div class="s">Sita → Ram 5</div></div>
+      <span class="arrow">→</span>
+      <div class="box pub"><div class="t">Public key</div><div class="s">anyone can check</div></div>
+    </div>
+    <div class="check">
+      <div><span>Sita → Ram <b>5</b> coins</span><span class="ok">✓ valid</span></div>
+      <div><span>Mallory changes 5 to <b>50</b></span><span class="no">✗ refused</span></div>
+      <div><span>Same payment sent <b>twice</b></span><span class="no">✗ refused</span></div>
+    </div>
+    <div class="stat"><span class="n">13 / 13</span><span class="l">theft attempts refused in my tests</span></div>
+  </div>
+  <ul>
+    <li>Private key signs, public key checks</li>
+    <li>Change one letter and the signature breaks</li>
+    <li>A payment number stops "send it twice"</li>
+  </ul>
+  <div class="foot">
+    <div class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="by"><b>Manish Khadka</b><span>github.com/Khadka1996/Learning-Blockchain</span></div>
+  </div>
+</body></html>
