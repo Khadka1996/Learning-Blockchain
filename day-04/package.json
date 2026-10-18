@@ -1,0 +1,25 @@
+{
+  "name": "day-04-merkle-forks-consensus",
+  "version": "1.0.0",
+  "description": "Day 04 of Learning Blockchain — Merkle trees, forks & consensus (longest-chain rule, P2P simulation)",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/demo.js",
+    "fork": "node src/fork.js",
+    "sim": "node src/sim.js",
+    "attack:v1": "node qa/v1-attack.js",
+    "test": "node --test",
+    "lint": "eslint ."
+  },
+  "author": "Manish Khadka",
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "fast-check": "^3.23.2",
+    "globals": "^15.15.0"
+  }
+}
