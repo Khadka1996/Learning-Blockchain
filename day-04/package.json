@@ -10,7 +10,12 @@
     "start": "node src/demo.js",
     "fork": "node src/fork.js",
     "sim": "node src/sim.js",
+    "spv": "node src/spv-demo.js",
     "attack:v1": "node qa/v1-attack.js",
+    "attack:evening": "node qa/evening-attack.js",
+    "ex:easy": "node exercises/solutions/proof-length.js",
+    "ex:medium": "node exercises/solutions/find-diff.js",
+    "ex:challenge": "node exercises/solutions/multiproof.js",
     "test": "node --test",
     "lint": "eslint ."
   },

@@ -59,3 +59,73 @@ $ npm run lint
 $ npm audit --omit=dev
 found 0 vulnerabilities
 ```
+
+## Evening audit
+
+**Reviewer stance:** external auditor, fresh eyes, assuming the morning author missed things.
+**Scope:** everything in `src/` after the morning fixes, plus the new evening code (light client `src/spv.js`, exercise solutions).
+**Method:** re-ran tests / ESLint / `npm audit` / the v1 attack script; then attacked what the morning did not touch: *what exactly does the block hash cover?* (Day 03's `txId` leaves the signature out), what a node does with a copy of a block that has the same hash but different bytes, how often an invalid block can be made to cost a full re-check, what happens to the children of an invalid block, and how the public read API (`chain`, `ledgerAt`) handles unknown hashes. Every real issue got a failing test **first** ([`test/evening-audit.test.js`](test/evening-audit.test.js): 5 of 8 failed before the fixes), then the fix. No Solidity, so Slither / Solhint do not apply.
+**Rounds:** 3 (round 1: E1–E3 found, tests written, fixed; round 2: re-attacked the fixes — a temporary failure (block from the future) and a wrong `hash` field must **not** be blacklisted; property test with honest blocks, mutated copies and invalid branches in random order; round 3: reviewed the light client and exercise solutions with fuzz tests that they never throw; final re-run clean).
+
+### Round 1 — attack output (before fixes)
+
+```
+Mallory sends block 2 with one broken signature, before the victim has block 1
+real block 2 → duplicate                 ← the honest block is thrown away
+victim tip height 1, honest height 2, Ram 0 coins (should be 30)
+
+20 resends of one invalid block at height 100: 2,044 ms   (≈100 ms of replay + signature checks each)
+```
+
+After the fixes the same script ([`qa/evening-attack.js`](qa/evening-attack.js), `npm run attack:evening`) prints `real block 2 → orphan`, `victim tip height 2 … Ram 30`, and `20 resends … 96 ms` (only the first one is checked).
+
+| ID | Severity | How found | Description | Fix | Proving test |
+|----|----------|-----------|-------------|-----|--------------|
+| E1 | **Medium** | Manual (what does the hash commit to?) | **Same hash, different block.** Merkle leaves were Day 03 `txId`s, which **exclude the signature**. A copy of a block with a broken signature had the *same* hash and passed the Merkle check. Sent as an orphan **before** the real block, it made the node drop the honest block as a "duplicate"; when the parent arrived, the fake failed and the victim was stuck one block behind (Ram's 30 coins missing). Sita could also re-sign her own payment (random *k*) and make two different blocks with one hash. Bitcoin had the same class of problem ("mutated blocks", fixed by the BIP 141 witness commitment). | Merkle leaf = `JSON["learning-blockchain/tx-leaf", txId, signature]`: the block hash now covers every signature. A copy with any changed byte fails the Merkle check before it is stored. | `E1: the block hash commits to every signature…`, `E1: a mutated copy sent first cannot block the real block…` |
+| E2 | Low | Manual (DoS review) | **Free re-checks.** A block that failed a permanent rule (bad payment, wrong height, time before parent) was forgotten, so re-sending it cost a full ledger replay every time (~100 ms at height 100) for one Proof of Work. Its children were parked as orphans and took slots in the pool. | Remember invalid hashes (bounded set, 10,000); a block whose parent is invalid is invalid too, also for orphans already waiting (Bitcoin Core's `BLOCK_FAILED_CHILD`). Only *permanent* failures are remembered: a block from the future or a wrong `hash` field is not. Safe only **because** of E1. | `E2: a block that failed for good is remembered…`, `E2: an orphan whose parent turns out invalid…`, `E2: a temporary failure … is NOT remembered`, `E2: … 'hash' field … not blacklisted` |
+| E3 | Low | Manual (API fuzzing) | `node.chain(hash)` / `ledgerAt(hash)` with an unknown hash crashed with `TypeError: Cannot read properties of undefined`. | Clear `RangeError("unknown block …")`. | `E3: asking about an unknown block gives a clear error…` |
+
+**Checked, not vulnerable:** honest blocks + mutated copies + an invalid side branch delivered in any order, with repeats, always end on the honest tip with an empty orphan pool (property test, 200 runs). The light client never throws on 300 random inputs, refuses headers with the wrong difficulty, without real work or with an unknown parent, and refuses payments in a block on a losing branch.
+
+### Known issues (after the evening)
+
+| ID | Severity | Status |
+|----|----------|--------|
+| K1 | Low | Unchanged (replay from genesis per block). It is now visible: the 30-block light-client demo takes ~18 s, almost all of it in the full node. |
+| K2 | Low | Unchanged (orphan pool eviction). The invalid set can be evicted the same way; the cost is only a re-check. |
+| K3, K4 | Info | Unchanged (no mempool / deep-reorg limit; 2-hour future timestamps). |
+| K5 | Info | **New.** A block has a 1,000-transaction limit but no **byte** limit; a huge signature string is hashed (after the PoW check) before it is refused. Real chains cap block weight (Bitcoin) or gas (Ethereum). |
+| K6 | Info | **New.** A light client trusts that full nodes checked the payments: a chain with the most work but invalid payments would fool it (Bitcoin whitepaper §8). Fraud proofs / validity proofs come on Day 12 and 14. |
+
+### Evening improvement
+
+**A light client (SPV)** — [`src/spv.js`](src/spv.js), `npm run spv`. It stores only headers, follows the header chain with the most work, and checks "is my payment in block X, and how deep?" with a Merkle proof from a full node:
+
+```
+1. A full node has 30 blocks with 600 payments: 205,611 bytes
+   The phone keeps only the 30 headers:            5,986 bytes (34× less)
+
+2. "Sita paid Ram 25 coins in block 5" + a 5-hash proof (160 bytes)
+   phone says: paid, 26 confirmations deep
+
+3. Server claims it was 250 coins → refused: Merkle proof does not match the block
+4. Payment in a block that lost a fork → refused: block is not on the best chain (stale branch)
+5. Header without real Proof of Work → rejected: not enough Proof of Work
+```
+
+### Final green run (evening)
+
+```
+$ npm test          # 25 morning + 9 audit + 6 light-client + 4 exercise-solution tests
+# tests 44
+# pass 44
+# fail 0
+
+$ npm run lint
+eslint: 0 problems
+
+$ npm audit --omit=dev
+found 0 vulnerabilities
+```
+
+**Result:** 0 high, 0 medium findings open. Morning: 1 high + 5 medium + 2 low fixed. Evening: 1 medium + 2 low fixed; 2 low + 4 info accepted.

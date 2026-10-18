@@ -8,6 +8,7 @@ const { txId, snapshot: snapshotTx } = require("../../day-03/src/transaction"); 
 
 const HEADER_VERSION = 1;
 const DOMAIN = "learning-blockchain/header";
+const LEAF_DOMAIN = "learning-blockchain/tx-leaf";
 const HEADER_KEYS = ["version", "chainId", "height", "prevHash", "merkleRoot", "timestamp", "bits", "nonce"];
 const MAX_TXS = 1000; // a block-size limit, like Bitcoin's (stops one block eating all memory)
 const MAX_NONCE = 2 ** 32; // Bitcoin's nonce is 32 bits too
@@ -66,9 +67,21 @@ function leadingZeroBits(hex) {
 /** Expected guesses to find a block with `bits` zero bits = 2^bits. This is the block's "work". */
 const workOf = (bits) => 2n ** BigInt(bits);
 
-/** Merkle root of a block's transactions: the leaves are the Day 03 transaction ids. */
+/**
+ * The Merkle leaf of a transaction: its Day 03 id AND its signature.
+ * The morning version used only `txId`, which leaves the signature out, so a block's hash did
+ * not cover its signatures: a copy with a broken signature had the SAME hash, and sent as an
+ * orphan first it made the node drop the real block as a "duplicate" (QA E1). Bitcoin closes
+ * the same gap with the witness commitment (BIP 141 wtxid); Ethereum's tx hash includes v, r, s.
+ */
+function txLeaf(tx) {
+  if (typeof tx.signature !== "string") throw new TypeError("signature must be a string");
+  return Buffer.from(JSON.stringify([LEAF_DOMAIN, txId(tx), tx.signature]), "utf8");
+}
+
+/** Merkle root of a block's transactions (one leaf per transaction, see txLeaf). */
 function txRoot(txs) {
-  return merkleRoot(txs.map((tx) => Buffer.from(txId(tx), "hex")));
+  return merkleRoot(txs.map(txLeaf));
 }
 
 /**
@@ -107,5 +120,5 @@ function mineBlock({ chainId, height, prevHash, timestamp, bits }, txs) {
 
 module.exports = {
   HEADER_VERSION, HEADER_KEYS, MAX_TXS, ZERO_HASH,
-  snapshot, readHeader, readTxs, headerBytes, blockHash, leadingZeroBits, workOf, txRoot, mineBlock,
+  snapshot, readHeader, readTxs, headerBytes, blockHash, leadingZeroBits, workOf, txLeaf, txRoot, mineBlock,
 };

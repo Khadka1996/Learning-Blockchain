@@ -2,7 +2,8 @@
 "use strict";
 
 const { demoWallet } = require("../../day-03/src/keys");
-const { createTransfer, txId } = require("../../day-03/src/transaction");
+const { createTransfer } = require("../../day-03/src/transaction");
+const { txLeaf } = require("./block");
 const { merkleRoot, merkleProof, verifyProof } = require("./merkle");
 
 const CHAIN = "lb-devnet";
@@ -13,7 +14,7 @@ function run({ count = COUNT, pick = 737, quiet = false } = {}) {
   const [sita, ram] = ["sita", "ram"].map(demoWallet);
   // 1,000 real signed payments from Day 03 (Sita → Ram, 1 coin each, nonces 0…999).
   const txs = Array.from({ length: count }, (_, nonce) => createTransfer(sita, { to: ram.address, amount: 1, nonce, chainId: CHAIN }));
-  const leaves = txs.map((tx) => Buffer.from(txId(tx), "hex"));
+  const leaves = txs.map(txLeaf); // id + signature, exactly what a block commits to (QA E1)
 
   const root = merkleRoot(leaves);
   log(`1. ${count.toLocaleString("en-US")} signed payments → one Merkle root`);
@@ -28,7 +29,7 @@ function run({ count = COUNT, pick = 737, quiet = false } = {}) {
   log(`   verify(payment #${pick}) → ${ok}`);
 
   const edited = createTransfer(sita, { to: ram.address, amount: 2, nonce: pick, chainId: CHAIN });
-  const editedOk = verifyProof(Buffer.from(txId(edited), "hex"), proof, root);
+  const editedOk = verifyProof(txLeaf(edited), proof, root);
   log(`\n3. Same proof, but the payment says 2 coins instead of 1 → ${editedOk}`);
   const wrongPlace = verifyProof(leaves[pick], { ...proof, index: pick + 1 }, root);
   log(`   Same payment, claimed at position #${pick + 1} → ${wrongPlace}`);

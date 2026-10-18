@@ -1,0 +1,79 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 1080px; height: 1350px; font-family: Inter, sans-serif; color: #fff;
+    background: #0B1F3A;
+    background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 54px 54px; padding: 72px; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; gap: 20px; }
+  .pill { background: #2563EB; padding: 10px 22px; border-radius: 999px; font-weight: 700; font-size: 26px; letter-spacing: 1px; }
+  .tag { color: #94A3B8; font-size: 26px; font-weight: 500; }
+  h1 { font-size: 80px; line-height: 1.08; font-weight: 800; margin-top: 56px; letter-spacing: -1.5px; }
+  h1 em { font-style: normal; color: #22D3EE; }
+  .viz { margin-top: 52px; background: #0F172A; border: 1px solid #1E3A5F; border-radius: 24px; padding: 36px 40px; font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; }
+  .row { font-size: 27px; color: #CBD5E1; }
+  .row b { color: #FDE68A; font-weight: 600; }
+  .hash { font-size: 25px; color: #64748B; margin: 8px 0 26px; word-break: break-all; }
+  .hash span { color: #22D3EE; }
+  .stat { display: flex; align-items: baseline; gap: 18px; border-top: 1px solid #1E3A5F; padding-top: 22px; font-family: Inter, sans-serif; }
+  .stat .n { font-size: 72px; font-weight: 800; color: #22D3EE; }
+  .stat .l { font-size: 27px; color: #94A3B8; }
+  ul { list-style: none; margin-top: 64px; }
+  li { font-size: 34px; color: #CBD5E1; margin-bottom: 26px; }
+  li::before { content: "→ "; color: #22D3EE; font-weight: 700; }
+  .foot { margin-top: auto; }
+  .bar { display: flex; gap: 8px; margin-bottom: 22px; }
+  .bar i { flex: 1; height: 10px; border-radius: 5px; background: #1E3A5F; }
+  .bar i.on { background: #22D3EE; }
+  .by { font-size: 22px; color: #94A3B8; display: flex; justify-content: space-between; }
+  .by b { color: #fff; }
+
+  h1 { font-size: 72px; margin-top: 50px; }
+  .badge { margin-left: auto; background: rgba(34,211,238,.12); border: 2px solid #22D3EE; color: #22D3EE; padding: 8px 20px; border-radius: 999px; font-weight: 700; font-size: 24px; }
+  .viz { margin-top: 44px; padding: 30px 36px; }
+  .lab { font-family: Inter, sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; margin-bottom: 14px; }
+  .lab.bad { color: #F87171; } .lab.good { color: #34D399; }
+  .r { display: flex; align-items: center; font-size: 26px; color: #CBD5E1; margin-bottom: 10px; }
+  .r .in { width: 190px; color: #FDE68A; }
+  .r .ar { width: 50px; color: #64748B; }
+  .r .out { color: #F87171; }
+  .r .ok { color: #34D399; font-family: Inter, sans-serif; font-weight: 600; }
+  .sep { border-top: 1px solid #1E3A5F; margin: 22px 0 20px; }
+  .stats { display: flex; gap: 16px; margin-top: 30px; }
+  .stats div { flex: 1; background: #0F172A; border: 1px solid #1E3A5F; border-radius: 18px; padding: 18px 20px; }
+  .stats b { display: block; font-size: 46px; font-weight: 800; color: #22D3EE; }
+  .stats span { font-size: 21px; color: #94A3B8; }
+  ul { margin-top: 40px; } li { font-size: 30px; margin-bottom: 18px; }
+  .r .in { width: 450px; } .r { font-size: 25px; white-space: nowrap; } .r .out { font-family: Inter, sans-serif; font-weight: 600; }
+  .note { font-family: Inter, sans-serif; font-size: 20px; color: #64748B; margin-top: 14px; }
+  ul li::before { content: "→ "; }
+</style></head>
+<body>
+  <div class="top"><span class="pill">DAY 04 / 15</span><span class="tag">#LearningBlockchain · Merkle trees</span><span class="badge">&#10003; AUDITED</span></div>
+  <h1>A fake copy had the <em>same fingerprint.</em> Now every signature counts.</h1>
+  <div class="viz">
+    <div class="lab bad">BEFORE — THE SIGNATURE WAS LEFT OUT</div>
+    <div class="r"><span class="in">Copy with a broken signature</span><span class="ar">→</span><span class="out">same block hash</span></div>
+    <div class="r"><span class="in">Real block arrives later</span><span class="ar">→</span><span class="out">dropped as a &#8220;duplicate&#8221;</span></div>
+    <div class="sep"></div>
+    <div class="lab good">AFTER — EACH LEAF = PAYMENT + SIGNATURE</div>
+    <div class="r"><span class="in">Copy with a broken signature</span><span class="ar">→</span><span class="ok">&#10003; refused at once</span></div>
+    <div class="r"><span class="in">Real block arrives later</span><span class="ar">→</span><span class="ok">&#10003; accepted, Ram gets 30</span></div>
+  </div>
+  <div class="stats">
+    <div><b>11</b><span>bugs fixed today</span></div>
+    <div><b>34&#215;</b><span>less data on a phone</span></div>
+    <div><b>44 / 44</b><span>tests passing</span></div>
+  </div>
+  <ul>
+    <li>One fingerprint can stand for 1,000 payments</li>
+    <li>Forks are normal: the branch with most work wins</li>
+    <li>Always ask what a fingerprint really covers</li>
+  </ul>
+  <div class="foot">
+    <div class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="by"><b>Manish Khadka</b><span>github.com/Khadka1996/Learning-Blockchain</span></div>
+  </div>
+</body></html>

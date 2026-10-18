@@ -135,4 +135,4 @@ function verifyProof(leaf, proof, rootHex) {
   }
 }
 
-module.exports = { merkleRoot, merkleProof, verifyProof, leafHash, nodeHash, MAX_LEAVES };
+module.exports = { merkleRoot, merkleProof, verifyProof, leafHash, nodeHash, finalRoot, MAX_LEAVES };

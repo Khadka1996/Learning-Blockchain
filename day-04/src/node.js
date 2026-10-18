@@ -8,6 +8,7 @@ const { snapshot, readHeader, readTxs, headerBytes, leadingZeroBits, workOf, txR
 const { createHash } = require("crypto");
 
 const MAX_ORPHANS = 100; // blocks whose parent we have not seen yet (QA A4: v1 kept unlimited)
+const MAX_INVALID = 10_000; // hashes of blocks that broke a permanent rule (QA E2), oldest dropped first
 const MAX_FUTURE_MS = 2 * 60 * 60 * 1000; // like Bitcoin: a block may be at most 2 hours "in the future"
 const BLOCK_KEYS = ["header", "txs", "hash"];
 
@@ -33,6 +34,7 @@ class Node {
   #clock;
   #blocks = new Map(); // hash → { block, height, work (total work from genesis, BigInt), parent }
   #orphans = new Map(); // hash → block, oldest first
+  #invalid = new Set(); // hashes of blocks that can never become valid (QA E2)
   #tip;
 
   /**
@@ -69,6 +71,7 @@ class Node {
 
   /** Block hashes of the best chain, genesis first. */
   chain(from = this.#tip) {
+    if (!this.#blocks.has(from)) throw new RangeError(`unknown block ${String(from).slice(0, 16)}`); // QA E3
     const out = [];
     for (let h = from; h !== null; h = this.#blocks.get(h).parent) out.push(h);
     return out.reverse();
@@ -92,7 +95,14 @@ class Node {
     } catch (e) {
       return { status: "rejected", reason: e.message };
     }
+    // Safe to remember by hash: since E1 the hash covers the header, every transaction and every
+    // signature, so one hash can never stand for both a bad block and a good one.
+    if (this.#invalid.has(block.hash)) return { status: "rejected", reason: "known invalid block" };
     if (this.#blocks.has(block.hash) || this.#orphans.has(block.hash)) return { status: "duplicate", hash: block.hash };
+    if (this.#invalid.has(block.header.prevHash)) {
+      this.#markInvalid(block.hash);
+      return { status: "rejected", reason: `parent ${block.header.prevHash.slice(0, 16)} is invalid` };
+    }
     if (!this.#blocks.has(block.header.prevHash)) return this.#keepOrphan(block);
 
     const oldTip = this.#tip;
@@ -100,6 +110,8 @@ class Node {
     try {
       this.#connect(block);
     } catch (e) {
+      this.#markInvalid(block.hash);
+      this.#dropInvalidOrphans();
       return { status: "rejected", reason: e.message };
     }
     added.push(block.hash);
@@ -112,10 +124,11 @@ class Node {
           this.#connect(orphan);
           added.push(h);
         } catch {
-          /* an invalid orphan is simply dropped */
+          this.#markInvalid(h); // an invalid orphan is dropped and remembered
         }
       }
     }
+    this.#dropInvalidOrphans();
     const reorg = this.#tip !== oldTip ? this.#reorgInfo(oldTip, this.#tip) : null;
     return { status: "added", hash: block.hash, added, tipChanged: reorg !== null, reorg };
   }
@@ -150,6 +163,25 @@ class Node {
     return Object.freeze({ header, txs, hash });
   }
 
+  #markInvalid(hash) {
+    if (this.#invalid.size >= MAX_INVALID) this.#invalid.delete(this.#invalid.values().next().value);
+    this.#invalid.add(hash);
+  }
+
+  /** Orphans that descend from an invalid block are invalid too (Bitcoin Core: BLOCK_FAILED_CHILD). */
+  #dropInvalidOrphans() {
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const [h, orphan] of this.#orphans) {
+        if (!this.#invalid.has(orphan.header.prevHash)) continue;
+        this.#orphans.delete(h);
+        this.#markInvalid(h);
+        changed = true;
+      }
+    }
+  }
+
   #keepOrphan(block) {
     if (this.#orphans.size >= MAX_ORPHANS) this.#orphans.delete(this.#orphans.keys().next().value); // drop the oldest
     this.#orphans.set(block.hash, block);
@@ -179,4 +211,4 @@ class Node {
 
 Object.freeze(Node.prototype);
 
-module.exports = { Node, makeParams, MAX_ORPHANS, MAX_FUTURE_MS };
+module.exports = { Node, makeParams, MAX_ORPHANS, MAX_INVALID, MAX_FUTURE_MS };

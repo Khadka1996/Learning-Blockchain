@@ -67,7 +67,10 @@ npm start           # 1,000 payments → one Merkle root, a 10-hash proof
 npm run fork        # 4 nodes, a double spend, a split network, a reorg
 npm run sim         # random networks: slower messages → more forks
 npm run attack:v1   # the naive v1 and the 4 attacks that broke it
-npm test            # 25 tests: known answers, property/fuzz tests, attacks
+npm run spv         # evening: a phone wallet checks a payment with headers only
+npm run attack:evening  # evening audit attacks E1, E2 (now refused)
+npm run ex:easy     # exercises (see exercises/README.md)
+npm test            # 44 tests: known answers, property/fuzz tests, attacks, exercises
 npm run lint
 ```
 
@@ -77,17 +80,18 @@ npm run lint
 | [`src/block.js`](src/block.js) | Block header (with Merkle root), header hash, Proof of Work miner |
 | [`src/node.js`](src/node.js) | Full node: checks blocks, keeps all branches, most-work fork choice, orphans, reorgs |
 | [`src/network.js`](src/network.js) | Seeded peer-to-peer simulator with message delays |
+| [`src/spv.js`](src/spv.js) · [`src/spv-demo.js`](src/spv-demo.js) | Evening: light client (headers only + Merkle proofs) |
 | [`src/demo.js`](src/demo.js) · [`src/fork.js`](src/fork.js) · [`src/sim.js`](src/sim.js) | The three runs below |
 | [`qa/v1-attack.js`](qa/v1-attack.js) | My first, naive version and the attacks on it |
 | [`QA.md`](QA.md) | Findings, fixes and proving tests |
 
 ## Results from my run
 
-**Merkle tree** (`npm start`, 1,000 real signed payments from Day 03):
+**Merkle tree** (`npm start`, 1,000 real signed payments from Day 03; root and hashes below are after the evening fix E1, which puts each signature into its leaf):
 
 ```
 1. 1,000 signed payments → one Merkle root
-   root c298b119c2e95b17fd0bdf828d0d33b65ad65421d714c3b28a163f8f72d75326
+   root ba173f791b04f47b9c3fcc2fab6463b00d3b082e4e3924d51f50e79a08107166
 
 2. Proof that payment #737 is inside
    10 sibling hashes = 320 bytes
@@ -110,14 +114,14 @@ npm run lint
 t=0.5 s  B mines block 1. Everyone has it.
 t=1.0 s  A mines block 2 with "Sita → Ram 30". C mines a different block 2 with "Sita → Hari 30".
 t=1.1 s  The network is split:
-         A:000db583@2  B:000db583@2  C:000b82a9@2  D:000b82a9@2
+         A:0000fa08@2  B:0000fa08@2  C:000da756@2  D:000da756@2
          A sees: Ram 30, Hari 0   |   D sees: Ram 0, Hari 30
 t=2.0 s  Both blocks reached everyone. Equal work, so each node keeps the one it saw FIRST
 t=2.0 s  D mines block 3 on top of C's block. That branch now has more work.
 t=2.30 s  A switches branch: throws away 1 block
 t=2.30 s  B switches branch: throws away 1 block
 
-End:     A:0005414f@3  B:0005414f@3  C:0005414f@3  D:0005414f@3
+End:     A:000553d5@3  B:000553d5@3  C:000553d5@3  D:000553d5@3
          All nodes agree: true.  Balances everywhere: Ram 0, Hari 30
          Ram's payment was "confirmed" for about 1 second, then disappeared.
 ```
@@ -153,6 +157,37 @@ When messages take as long as a block, more than a third of all mining is wasted
 - [CVE-2012-2459: duplicate transactions and the Merkle tree](https://nvd.nist.gov/vuln/detail/CVE-2012-2459)
 - [Mastering Bitcoin, 3rd ed., ch. 11 "The Blockchain" & ch. 12 "Mining and Consensus" (open source)](https://github.com/bitcoinbook/bitcoinbook)
 - [Ethereum.org: Merkle Patricia Trie](https://ethereum.org/en/developers/docs/data-structures-and-encoding/patricia-merkle-trie/)
+
+## Evening update
+
+An independent audit this evening found **3 more issues** (1 medium, 2 low), all fixed with a failing test first. Full table in [QA.md → Evening audit](QA.md#evening-audit).
+
+- **The big one (E1): same hash, different block.** The Merkle leaves were Day 03 transaction ids, and those leave the signature out. So a copy of a block with a broken signature had the **same** block hash. Sent to a node *before* the real block, the fake sat in the orphan pool and the real block was thrown away as a "duplicate": the node got stuck one block behind and Ram's 30 coins were missing. Now each leaf is `[txId, signature]`, so the block hash covers every byte that matters. Bitcoin fixed the same class of problem with the SegWit witness commitment (BIP 141).
+- **E2: free re-checks.** An invalid block was forgotten after being refused, so sending it 20 more times cost ~2 s of replays at height 100. Now permanently invalid blocks (and their children) are remembered: 20 resends cost 86 ms, only the first check. Temporary failures (a block from the future) are deliberately **not** remembered. This is only safe because of E1.
+- **E3:** `chain()` / `ledgerAt()` with an unknown hash crashed inside the node; now a clear `RangeError`.
+- **Improvement: a light client (SPV)**, like a phone wallet (whitepaper §8). It keeps only headers, follows the most work and checks a payment with a Merkle proof. `npm run spv`:
+
+```
+1. A full node has 30 blocks with 600 payments: 205,611 bytes
+   The phone keeps only the 30 headers:            5,986 bytes (34× less)
+
+2. "Sita paid Ram 25 coins in block 5" + a 5-hash proof (160 bytes)
+   phone says: paid, 26 confirmations deep
+
+3. Server claims it was 250 coins → refused: Merkle proof does not match the block
+4. Payment in a block that lost a fork → refused: block is not on the best chain (stale branch)
+5. Header without real Proof of Work → rejected: not enough Proof of Work
+```
+
+- **Exercises:** [proof length by arithmetic, spot the difference top-down (1 changed payment of 1,024 found with 21 comparisons), and one proof for 8 payments (27 hashes instead of 78)](exercises/README.md).
+
+**Quality now:** 44 / 44 tests pass, ESLint clean, `npm audit` 0 vulnerabilities, 0 high / medium findings open.
+
+## What I'd explore next
+
+- **Bitcoin's real block format**: 80-byte headers, double SHA-256 and the compact `nBits` target, then verify a real block's Merkle root from its transactions (the light client stores ~200 bytes per header today; Bitcoin needs 80).
+- **Merkle Patricia tries and Verkle trees**: Ethereum commits to the *state* (every balance), not just the transactions, so a light client can prove "Sita has 70 coins" too. Day 05 starts there.
+- **Selfish mining (Eyal & Sirer, 2014)**: a miner that hides blocks can earn more than its fair share with about a third of the hash power; simulate it with today's network.
 
 ## Coming next
 
