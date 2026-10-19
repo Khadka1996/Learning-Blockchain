@@ -27,7 +27,7 @@ Each day has its own folder with notes, working code, tests, a QA & security rep
 | 03 | 17 Oct | [Keys, signatures & transactions](day-03) | secp256k1 wallets, signed transfers, balances | ✅ |
 | 04 | 18 Oct | [Merkle trees, forks & consensus](day-04) | Merkle proofs, longest-chain rule, P2P simulation | ✅ |
 | **Phase 2 — Ethereum & Solidity** | | | | |
-| 05 | 19 Oct | Ethereum & the EVM | Accounts, gas, opcodes, storage layout — read chain data with ethers.js | ⏳ |
+| 05 | 19 Oct | [Ethereum & the EVM](day-05) | Accounts, gas, opcodes, storage layout — read chain data with ethers.js | 🔨 |
 | 06 | 20 Oct | Solidity fundamentals | Hardhat project, storage, events, modifiers + tests | ⏳ |
 | 07 | 21 Oct | ERC-20 tokens | Token with OpenZeppelin, allowances, fuzz tests | ⏳ |
 | 08 | 22 Oct | NFTs: ERC-721 & ERC-1155 | NFT collection with metadata + royalties | ⏳ |

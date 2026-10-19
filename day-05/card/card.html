@@ -1,0 +1,71 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 1080px; height: 1350px; font-family: Inter, sans-serif; color: #fff;
+    background: #0B1F3A;
+    background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+    background-size: 54px 54px; padding: 72px; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; gap: 20px; }
+  .pill { background: #2563EB; padding: 10px 22px; border-radius: 999px; font-weight: 700; font-size: 26px; letter-spacing: 1px; }
+  .tag { color: #94A3B8; font-size: 26px; font-weight: 500; }
+  h1 { font-size: 70px; line-height: 1.08; font-weight: 800; margin-top: 44px; letter-spacing: -1.5px; }
+  h1 em { font-style: normal; color: #22D3EE; }
+  .viz { margin-top: 38px; background: #0F172A; border: 1px solid #1E3A5F; border-radius: 24px; padding: 30px 40px 28px; }
+  .legend { display: flex; gap: 34px; font-size: 24px; color: #94A3B8; margin-bottom: 14px; }
+  .legend span { display: flex; align-items: center; gap: 10px; }
+  .legend i { display: block; width: 22px; height: 22px; border-radius: 6px; border: 3px solid; }
+  .stat { display: flex; align-items: baseline; gap: 18px; border-top: 1px solid #1E3A5F; padding-top: 20px; margin-top: 18px; }
+  .stat .n { font-size: 64px; font-weight: 800; color: #22D3EE; white-space: nowrap; }
+  .stat .l { font-size: 26px; color: #94A3B8; line-height: 1.3; }
+  ul { list-style: none; margin-top: 44px; }
+  li { font-size: 31px; color: #CBD5E1; margin-bottom: 18px; }
+  li::before { content: "→ "; color: #22D3EE; font-weight: 700; }
+  .foot { margin-top: auto; }
+  .bar { display: flex; gap: 8px; margin-bottom: 22px; }
+  .bar i { flex: 1; height: 10px; border-radius: 5px; background: #1E3A5F; }
+  .bar i.on { background: #22D3EE; }
+  .by { font-size: 22px; color: #94A3B8; display: flex; justify-content: space-between; }
+  .by b { color: #fff; }
+
+  .rows { display: flex; flex-direction: column; gap: 22px; }
+  .row .lab { display: flex; justify-content: space-between; font-size: 27px; color: #CBD5E1; margin-bottom: 10px; }
+  .row .lab b { color: #fff; font-weight: 700; }
+  .row .lab code { font-family: 'JetBrains Mono', monospace; font-size: 25px; color: #94A3B8; }
+  .track { display: block; height: 38px; background: #0B1F3A; border: 1px solid #1E3A5F; border-radius: 10px; overflow: hidden; }
+  .fill { display: block; height: 100%; border-radius: 9px; }
+  .ops { display: flex; gap: 14px; margin-top: 26px; flex-wrap: nowrap; }
+  .op { flex: 1; background: #0B1F3A; border: 1px solid #1E3A5F; border-radius: 14px; padding: 14px 10px; text-align: center; }
+  .op .c { font-family: 'JetBrains Mono', monospace; font-size: 22px; color: #94A3B8; }
+  .op .g { font-size: 30px; font-weight: 800; color: #FDE68A; margin-top: 4px; }
+  .cap { font-size: 22px; color: #64748B; margin-top: 12px; }
+</style></head>
+<body>
+  <div class="top"><span class="pill">DAY 05 / 15</span><span class="tag">#LearningBlockchain · Ethereum &amp; the EVM</span></div>
+  <h1>Every step has a <em>price</em>.<br>New data costs the most.</h1>
+  <div class="viz">
+    <div class="cap" style="margin:0 0 18px;font-size:24px;color:#94A3B8">Same function, called twice</div>
+    <div class="rows">
+      <div class="row"><div class="lab"><span><b>1st call</b> · counter 0 → 1</span><code>43,567 gas</code></div><span class="track"><span class="fill" style="width:100%;background:#22D3EE"></span></span></div>
+      <div class="row"><div class="lab"><span><b>2nd call</b> · counter 1 → 2</span><code>26,467 gas</code></div><span class="track"><span class="fill" style="width:60.75%;background:#2563EB"></span></span></div>
+    </div>
+    <div class="ops">
+      <div class="op"><div class="c">ADD</div><div class="g">3</div></div>
+      <div class="op"><div class="c">read again</div><div class="g">100</div></div>
+      <div class="op"><div class="c">send ETH</div><div class="g">21,000</div></div>
+      <div class="op"><div class="c">new value</div><div class="g">22,100</div></div>
+    </div>
+    <div class="cap">gas price list, from my run</div>
+    <div class="stat"><span class="n">10,134</span><span class="l">steps: my mini&#8209;EVM matched<br>the real EVM's gas on every one</span></div>
+  </div>
+  <ul>
+    <li>People have keys; contracts have code</li>
+    <li>Gas stops endless loops and spam</li>
+    <li>Data lives in 32&#8209;byte storage slots</li>
+  </ul>
+  <div class="foot">
+    <div class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="by"><b>Manish Khadka</b><span>github.com/Khadka1996/Learning-Blockchain</span></div>
+  </div>
+</body></html>
