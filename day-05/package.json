@@ -7,6 +7,9 @@
     "node": "hardhat node",
     "demo:localhost": "hardhat run src/demo.js --network localhost",
     "compile": "hardhat compile",
+    "ex:easy": "node exercises/solutions/packed-slot.js",
+    "ex:medium": "node exercises/solutions/warm-storage.js",
+    "ex:challenge": "node exercises/solutions/differential-opcode.js",
     "test": "hardhat test",
     "lint": "eslint . && solhint \"contracts/**/*.sol\"",
     "slither": "slither . --hardhat-ignore-compile"

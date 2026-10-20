@@ -1,0 +1,40 @@
+{
+  "name": "day-06-solidity-fundamentals",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Day 06 of Learning Blockchain \u2014 Solidity fundamentals: a tested ETH vault, attacks and fixes (Hardhat + ethers.js, local chain)",
+  "scripts": {
+    "start": "hardhat run src/demo.js",
+    "node": "hardhat node",
+    "demo:localhost": "hardhat run src/demo.js --network localhost",
+    "compile": "hardhat compile",
+    "ex:easy": "hardhat run exercises/solutions/easy.js",
+    "ex:medium": "hardhat run exercises/solutions/medium.js",
+    "ex:challenge": "hardhat run exercises/solutions/challenge.js",
+    "test": "hardhat test",
+    "test:gas": "hardhat test test/gas.test.js",
+    "lint": "eslint . && solhint \"contracts/**/*.sol\"",
+    "lint:sol": "solhint \"contracts/**/*.sol\"",
+    "slither": "slither . --hardhat-ignore-compile",
+    "qa:mutation": "node qa/mutation.js",
+    "clean": "hardhat clean"
+  },
+  "author": "Manish Khadka",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@nomicfoundation/hardhat-chai-matchers": "2.1.2",
+    "@nomicfoundation/hardhat-ethers": "3.1.0",
+    "chai": "4.5.0",
+    "eslint": "9.39.5",
+    "ethers": "6.15.0",
+    "fast-check": "3.23.2",
+    "globals": "15.15.0",
+    "hardhat": "2.26.3",
+    "solc": "0.8.24",
+    "solhint": "5.2.0"
+  }
+}

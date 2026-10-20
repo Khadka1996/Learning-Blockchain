@@ -73,6 +73,7 @@ npm run slither         # static analysis (after npm run compile)
 | [`contracts/Layout.sol`](contracts/Layout.sol) | Small contract laid out to show packing, mappings and arrays; deposit / withdraw / owner-only actions |
 | [`src/demo.js`](src/demo.js) | Accounts, a transfer, a deployment, raw storage, gas, mini-EVM vs Hardhat |
 | [`test/evm.diff.test.js`](test/evm.diff.test.js) | 150 random programs on both EVMs: every step's gas must match |
+| [`exercises/README.md`](exercises/README.md) | Three exercises on packed storage, warm reads, and differential testing |
 | [`QA.md`](QA.md) | Findings, fixes and proving tests |
 
 ## Results from my run
