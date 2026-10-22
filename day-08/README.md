@@ -59,10 +59,11 @@ npm install
 npm start               # guided tour of everything below, on an in-process chain
 npm run node            # or: local node in one terminal …
 npm run demo:localhost  # … and the tour against it in another
-npm test                # 99 tests (about 15 s; one runs 120 random programs)
+npm test                # 117 tests (about 15 s; one runs 120 random programs)
 npm run lint            # ESLint + Solhint
 npm run slither         # static analysis (after: npx hardhat clean && npm run compile)
-npm run qa:mutation     # break the contracts 34 ways; every break must make a test fail
+npm run qa:mutation     # break the contracts 38 ways; every break must make a test fail
+npm run ex:easy         # / ex:medium / ex:challenge : the exercise solutions
 ```
 
 Node.js 20 or 22 (LTS) is recommended.
@@ -70,13 +71,15 @@ Node.js 20 or 22 (LTS) is recommended.
 | File | What it does |
 |---|---|
 | [`contracts/MiniNFT.sol`](contracts/MiniNFT.sol) | ERC-721 written from scratch (~190 lines), same error names as OpenZeppelin |
-| [`contracts/LearningNFT.sol`](contracts/LearningNFT.sol) | The OpenZeppelin way: 100 supply, 0.01 ETH price, 3 per wallet, `.json` metadata, 5% royalty (ERC-2981) |
+| [`contracts/LearningNFT.sol`](contracts/LearningNFT.sol) | The OpenZeppelin way: 100 supply, 0.01 ETH price, 3 per wallet, `.json` metadata, 5% royalty (ERC-2981), freezable metadata (EIP-4906) |
+| [`contracts/exercises/`](contracts/exercises) | Worked solutions: a soulbound certificate, a Merkle-allowlist presale, and the storage version it beats |
 | [`contracts/GameItems.sol`](contracts/GameItems.sol) | ERC-1155: GOLD (1,000,000), SWORD (100), CROWN (exactly 1), batch minting with caps |
 | [`contracts/test/Helpers.sol`](contracts/test/Helpers.sol) | Test-only: the OpenZeppelin reference, good / missing / wrong / refusing receivers, a **deliberately broken** `NaiveNFT`, a re-entrant attacker |
 | [`src/demo.js`](src/demo.js) | The guided tour (`npm start`) |
-| [`test/`](test) | 99 tests: one ERC-721 suite run on **both** MiniNFT and OpenZeppelin, collection rules, royalties, re-entrancy, ERC-1155, and a **differential fuzz test** |
+| [`test/`](test) | 117 tests: one ERC-721 suite run on **both** MiniNFT and OpenZeppelin, collection rules, royalties, re-entrancy, ERC-1155, a **differential fuzz test**, the evening audit and the exercises |
 | [`qa/mutation.js`](qa/mutation.js) | Mutation testing harness |
-| [`QA.md`](QA.md) · [`card/`](card) | Findings · LinkedIn card |
+| [`exercises/`](exercises) | 3 levels + runnable solutions |
+| [`QA.md`](QA.md) · [`notes.pdf`](notes.pdf) · [`card/`](card) | Findings · printable study guide · LinkedIn cards |
 
 ## Results from my run
 
@@ -119,7 +122,21 @@ Things that surprised me:
 - **Batching 3 item types saved 24% gas** (201,004 vs 266,127). That is why games use ERC-1155.
 - **In ERC-1155 there is no per-item permission.** Approving a marketplace to sell your GOLD also lets it take your CROWN.
 
-**Quality:** 99 / 99 tests pass. ESLint + Solhint clean. `npm audit --omit=dev` 0 vulnerabilities. Slither: no real issue (5 informational results in production code, all explained in QA.md). **Mutation testing: 34 / 34 broken versions caught.** 3 findings fixed. See [QA.md](QA.md).
+**Quality (after the evening audit):** 117 / 117 tests pass. ESLint + Solhint clean. `npm audit --omit=dev` 0 vulnerabilities. Slither: no real issue (5 informational results in production code, all explained in QA.md). **Mutation testing: 38 / 38 broken versions caught.** 4 findings fixed, one of them Medium (E1). See [QA.md](QA.md).
+
+## Evening update
+
+The evening audit looked at what the contract *inherits*, not only what I wrote, and found **E1 (Medium)**: `LearningNFT` inherited `renounceOwnership()` from OpenZeppelin. Only the owner can withdraw the mint income, so giving up ownership with money inside would have locked that ETH forever. Now renouncing is refused while the balance is not zero. See [QA.md](QA.md#evening-audit).
+
+The improvement: the owner can now **freeze the metadata** for good (`freezeMetadata()`), and moving it emits **EIP-4906** `BatchMetadataUpdate` so marketplaces refresh the pictures. That closes the morning's "the owner can swap every picture" known issue.
+
+Exercises ([`exercises/`](exercises)): rebuild ownership from events and compute the ERC-721 interface id (easy), a **soulbound certificate** that cannot be sold (medium), and a **Merkle-allowlist presale** (challenge). In my run, writing the same 1,000 addresses into storage cost **22,858,999 gas**, 18.5× the whole Merkle contract (1,237,697 gas); a proof is just 10 hashes.
+
+### What I'd explore next
+
+- **Gas-cheap batch minting (ERC-721A / ERC-2309)**: mint 100 tokens for close to the price of one by writing ownership lazily.
+- **On-chain SVG metadata**: generate the picture inside `tokenURI` so nothing depends on a server.
+- **Signature-based presales (EIP-712)**: a backend signs "this address may mint 2", instead of a Merkle root that is fixed at deploy time.
 
 ## Key takeaways
 

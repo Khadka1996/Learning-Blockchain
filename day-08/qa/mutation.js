@@ -47,7 +47,11 @@ const MUTANTS = [
   [NFT, "ownerMint ignores the supply cap", "        if (quantity == 0) revert InvalidQuantity(quantity);\n        uint256 remaining = MAX_SUPPLY - totalMinted;\n        if (quantity > remaining) revert SoldOut(quantity, remaining);\n", "        if (quantity == 0) revert InvalidQuantity(quantity);\n"],
   [NFT, "withdraw failure ignored", "        if (!ok) revert WithdrawFailed();\n", ""],
   [NFT, "tokenURI without .json", "return string.concat(_base, tokenId.toString(), \".json\");", "return string.concat(_base, tokenId.toString());"],
-  [NFT, "ERC-2981 not advertised", "return super.supportsInterface(interfaceId);", "return interfaceId != 0x2a55205a && super.supportsInterface(interfaceId);"],
+  [NFT, "renounce allowed with funds inside (E1)", "        if (held != 0) revert FundsStillHeld(held);\n", ""],
+  [NFT, "setBaseURI ignores the freeze", "        if (metadataFrozen) revert MetadataIsFrozen();\n        _base = newBase;", "        _base = newBase;"],
+  [NFT, "freezeMetadata does not freeze", "        metadataFrozen = true;\n", ""],
+  [NFT, "no EIP-4906 refresh signal", "        emit BatchMetadataUpdate(1, type(uint256).max);\n", ""],
+  [NFT, "ERC-2981 not advertised", "return interfaceId == bytes4(0x49064906) || super.supportsInterface(interfaceId);", "return interfaceId == bytes4(0x49064906) || (interfaceId != 0x2a55205a && super.supportsInterface(interfaceId));"],
   // ---- GameItems -------------------------------------------------------------------------------
   [ITEMS, "cap check off by one", "if (amount > remaining) revert ExceedsMaxSupply", "if (amount >= remaining) revert ExceedsMaxSupply"],
   [ITEMS, "undefined ids can be minted", "        if (cap == 0) revert UnknownItem(id);\n", ""],
