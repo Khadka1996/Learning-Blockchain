@@ -23,14 +23,21 @@ contract LearningNFT is ERC721, ERC2981, Ownable {
     uint256 public totalMinted;
     mapping(address => uint256) public mintedBy;
     string private _base;
+    /// @notice Once true, the metadata link can never change again (evening improvement).
+    bool public metadataFrozen;
 
     event BaseURIChanged(string newBaseURI);
+    event MetadataFrozen(string finalBaseURI);
+    /// @dev EIP-4906: "token metadata changed, please re-read it" (signature from the EIP).
+    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
 
     error InvalidQuantity(uint256 quantity);
     error SoldOut(uint256 requested, uint256 remaining);
     error WalletLimit(address wallet, uint256 alreadyMinted, uint256 requested);
     error WrongPayment(uint256 sent, uint256 required);
     error WithdrawFailed();
+    error MetadataIsFrozen();
+    error FundsStillHeld(uint256 balance);
 
     /// @param royaltyReceiver who receives royalties on resales
     /// @param royaltyBps royalty in basis points (500 = 5%); OpenZeppelin caps it at 10000
@@ -76,9 +83,27 @@ contract LearningNFT is ERC721, ERC2981, Ownable {
         }
     }
 
+    /// @notice Move the metadata. Emits EIP-4906 so marketplaces know to re-read every token.
     function setBaseURI(string calldata newBase) external onlyOwner {
+        if (metadataFrozen) revert MetadataIsFrozen();
         _base = newBase;
         emit BaseURIChanged(newBase);
+        emit BatchMetadataUpdate(1, type(uint256).max);
+    }
+
+    /// @notice One-way switch: after this, nobody (not even the owner) can change what the NFTs show.
+    function freezeMetadata() external onlyOwner {
+        if (metadataFrozen) revert MetadataIsFrozen();
+        metadataFrozen = true;
+        emit MetadataFrozen(_base);
+    }
+
+    /// @notice Giving up ownership while mint income is inside would lock that ETH forever
+    ///         (only the owner can withdraw). Withdraw first. (Evening audit finding E1.)
+    function renounceOwnership() public override onlyOwner {
+        uint256 held = address(this).balance;
+        if (held != 0) revert FundsStillHeld(held);
+        super.renounceOwnership();
     }
 
     /// @notice Send the mint income to the owner. Pull pattern: income waits here until collected.
@@ -93,8 +118,8 @@ contract LearningNFT is ERC721, ERC2981, Ownable {
         return string.concat(_base, tokenId.toString(), ".json");
     }
 
-    /// @dev Both parents implement ERC-165; we must say "yes" to both sets of interfaces.
+    /// @dev Both parents implement ERC-165; we must say "yes" to both sets, plus EIP-4906.
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC2981) returns (bool) {
-        return super.supportsInterface(interfaceId);
+        return interfaceId == bytes4(0x49064906) || super.supportsInterface(interfaceId); // EIP-4906
     }
 }

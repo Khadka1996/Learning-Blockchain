@@ -57,3 +57,36 @@ Slither, test helpers: `reentrancy-no-eth` / `reentrancy-benign` in `NaiveNFT` a
 | K3 | Info | **`MiniNFT.mint` does not check the receiver hook** (like OpenZeppelin's `_mint`). The minter could mint into a contract that cannot hold NFTs. | Only the minter can mint; `LearningNFT` uses `_safeMint` for buyers. |
 | K4 | Info | **Metadata is a link, not the picture.** If the server behind `baseURI` disappears, the NFT points at nothing, and the owner of `LearningNFT` can change the base URI. | Expected for a learning collection; production collections use IPFS content hashes and freeze the URI. |
 | K5 | Info | `GameItems.mintBatch` checks repeated ids with a nested loop (O(n²)). | Owner-only and batches are small; a mapping-based check would cost more for the normal case. |
+
+## Evening audit
+
+**Approach:** an independent second pass, as an outside auditor who did not write the morning code. Re-ran every tool, then attacked what the morning review had *not* tried: ownership lifecycle, buying from inside someone else's mint, reading state from inside the receiver hook, the last-token race, constructor and zero-address inputs, and empty batches. Each attack is a test in [`test/audit.test.js`](test/audit.test.js).
+**Rounds:** 2 (round 1: 1 real issue found · round 2: fixed, improvement added, everything re-run, clean).
+
+| ID | Severity | How found | Description | Fix | Proving test |
+|----|----------|-----------|-------------|-----|--------------|
+| E1 | **Medium** | Manual review of inherited functions (`Ownable`) | **The owner could lock the mint income forever.** `LearningNFT` inherits `renounceOwnership()` from OpenZeppelin. Only the owner can `withdraw`, so renouncing while ETH is inside leaves that money with no one able to move it, ever. One mistaken click by the owner, no attacker needed. | `renounceOwnership()` is overridden: it reverts with `FundsStillHeld(balance)` while the contract holds any ETH. Withdraw first, then renounce (which also freezes minting by the owner, as intended). | `E1: the owner cannot renounce ownership while mint income is still inside` |
+| E2 | Info | Review | `setBaseURI` gave marketplaces no signal to refresh, and the owner could swap every picture at any time (morning K4). | **Evening improvement:** `setBaseURI` now emits EIP-4906 `BatchMetadataUpdate(1, 2²⁵⁶−1)` and `supportsInterface(0x49064906)` is true; new one-way `freezeMetadata()` locks the link for good. | `moving the metadata tells marketplaces to refresh` · `after freezeMetadata nobody can change what the NFT shows` |
+
+**Attacked and found safe (tests kept as regression guards):**
+- **Buying from inside the owner's giveaway.** A winner contract calls `mint` while `ownerMint` is still handing out tokens. `totalMinted` is advanced before the loop, so the buyer gets fresh id 3, no collision, cap respected.
+- **Read-only re-entrancy on `MiniNFT`.** Inside `onERC721Received` the receiver already sees itself as owner, its balance as 1, and the old one-token approval as gone. No stale state is visible.
+- **The last-token race.** Two buyers for token 100: the second is refused with `SoldOut(1, 0)` and keeps their ETH (only gas is spent).
+- **Bad constructor input.** A royalty receiver of `0x0` is refused by OpenZeppelin's `ERC2981InvalidDefaultRoyaltyReceiver`.
+- **`ownerMint` to `0x0`** reverts and leaves `totalMinted` untouched (the whole transaction rolls back).
+- **Empty ERC-1155 batch** mints nothing and changes no supply.
+- **Exercise contracts:** the soulbound certificate blocks `transferFrom`, `safeTransferFrom`, `approve` and `setApprovalForAll`; the allowlist refuses borrowed, empty, shortened and tampered proofs and double claims.
+
+**Mutation testing after the evening changes:** 4 new mutants (renounce guard removed, freeze ignored, freeze not set, EIP-4906 event removed) added to the 34 from the morning. **38 / 38 killed.** (One morning mutant's search pattern had to be updated because the evening edit changed that line.)
+
+### Final green output
+
+```
+npm test                   117 passing (12s)
+npm run lint               ESLint + Solhint: 0 errors, 0 warnings
+npm audit --omit=dev       found 0 vulnerabilities
+slither (102 detectors)    5 results in production contracts, all informational (same 5 as the morning, explained above); 0 in the exercise contracts
+npm run qa:mutation        38 of 38 mutants killed
+```
+
+No high or medium finding remains open.

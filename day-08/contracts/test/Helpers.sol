@@ -144,3 +144,44 @@ contract EthRejectingOwner {
         }
     }
 }
+
+interface IOwnerOfApproved {
+    function ownerOf(uint256 tokenId) external view returns (address);
+    function getApproved(uint256 tokenId) external view returns (address);
+    function balanceOf(address owner) external view returns (uint256);
+}
+
+/// @dev Looks at the NFT contract FROM INSIDE the receiver hook (read-only re-entrancy probe).
+contract ProbeReceiver is IERC721Receiver {
+    address public seenOwner;
+    address public seenApproved;
+    uint256 public seenBalance;
+
+    function onERC721Received(address, address, uint256 tokenId, bytes calldata) external returns (bytes4) {
+        IOwnerOfApproved nft = IOwnerOfApproved(msg.sender);
+        seenOwner = nft.ownerOf(tokenId);
+        seenApproved = nft.getApproved(tokenId);
+        seenBalance = nft.balanceOf(address(this));
+        return IERC721Receiver.onERC721Received.selector;
+    }
+}
+
+/// @dev A giveaway winner who buys more while the owner's giveaway mint is still running.
+contract BuyDuringGiveaway is IERC721Receiver {
+    IMintable public immutable target;
+    bool private _done;
+
+    constructor(address target_) payable {
+        target = IMintable(target_);
+    }
+
+    function onERC721Received(address, address, uint256, bytes calldata) external returns (bytes4) {
+        if (!_done) {
+            _done = true;
+            target.mint{value: 0.01 ether}(1);
+        }
+        return IERC721Receiver.onERC721Received.selector;
+    }
+
+    receive() external payable {}
+}
