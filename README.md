@@ -30,7 +30,7 @@ Each day has its own folder with notes, working code, tests, a QA & security rep
 | 05 | 19 Oct | [Ethereum & the EVM](day-05) | Mini-EVM, gas, opcodes, storage layout — differential-tested against Hardhat | ✅ |
 | 06 | 20 Oct | [Solidity fundamentals](day-06) | A tested ETH vault: events, modifiers, custom errors, reentrancy attack & fix, mutation testing | ✅ |
 | 07 | 21 Oct | [ERC-20 tokens](day-07) | A token from scratch + the OpenZeppelin version (cap, permit), allowances, a vault that survives fee/USDT/callback tokens, differential + mutation testing | ✅ |
-| 08 | 22 Oct | NFTs: ERC-721 & ERC-1155 | NFT collection with metadata + royalties | ⏳ |
+| 08 | 22 Oct | [NFTs: ERC-721 & ERC-1155](day-08) | An ERC-721 from scratch (differential-tested vs OpenZeppelin), a paid collection with royalties (ERC-2981) and a re-entrant-mint attack & fix, ERC-1155 game items | 🔨 |
 | **Phase 3 — Advanced** | | | | |
 | 09 | 23 Oct | Smart-contract security | Reentrancy, access control, front-running — exploit & fix, Slither | ⏳ |
 | 10 | 24 Oct | DeFi: AMM from scratch | Constant-product (x·y=k) swap pool + invariant tests | ⏳ |
