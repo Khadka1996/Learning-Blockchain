@@ -65,7 +65,8 @@ npm install
 npm start               # guided tour: each attack on the broken contract, then on the fixed one
 npm run node            # or: local node in one terminal …
 npm run demo:localhost  # … and the tour against it in another
-npm test                # 26 tests (about 4 s; FUZZ_RUNS=200 npm test for a longer fuzz)
+npm test                # 31 tests (about 8 s; FUZZ_RUNS=200 npm test for a longer fuzz)
+npm run ex:easy         # / ex:medium / ex:challenge : the exercise solutions
 npm run lint            # ESLint + Solhint
 npm run slither         # static analysis (after: npx hardhat clean && npm run compile)
 ```
@@ -75,6 +76,8 @@ npm run slither         # static analysis (after: npx hardhat clean && npm run c
 | [`contracts/vulnerable/`](contracts/vulnerable) | **Deliberately broken**: `VulnerableBank`, `VulnerableWallet`, `TxOriginWallet`, `HashPuzzle`, `KingOfTheHill`. Never deploy these. |
 | [`contracts/fixed/`](contracts/fixed) | The fixes: `SafeBank` (CEI + lock), `SafeWallet` (`Ownable2Step`), `MsgSenderWallet`, `CommitRevealPuzzle`, `SafeKingOfTheHill` (pull payments) |
 | [`contracts/attackers/`](contracts/attackers) | Test-only attackers: `ReentrancyAttacker`, `CrossFunctionAttacker`, `PhishingAirdrop`, `StubbornKing`, `ForceFeeder`, `RefusingDepositor` |
+| [`contracts/exercises/`](contracts/exercises) | Evening exercises: `PullAuction` (+ `StubbornBidder`) and `LeakyBank` (broken on purpose, for the fuzz challenge) |
+| [`exercises/`](exercises) | 3 levels + runnable solutions |
 | [`src/demo.js`](src/demo.js) | The guided tour (`npm start`) |
 | [`test/`](test) | One file per bug (exploit ✔ on the broken one, attack ✕ on the fixed one), [`05-invariants`](test/05-invariants.test.js) fuzz tests with fast-check, [`06-audit`](test/06-audit.test.js) regression tests for the QA findings, and a small "mempool bot" in [`helpers.js`](test/helpers.js) |
 
@@ -116,7 +119,19 @@ Things that surprised me:
 - **Slither flagged only 2 of my 5 planted bugs with a real warning** (re-entrancy and `tx.origin`). The open `initialize()`, the front-running and the stuck refund were invisible to it. Tools help; the exploit tests are what prove it.
 - **Two ways to block a re-entry, and my first test could not tell them apart** (see QA.md T1).
 
-**Quality:** 26 / 26 tests pass, including fuzz tests (200 random programs, 1,257 steps, the money invariant held after every one). ESLint + Solhint clean. `npm audit --omit=dev` 0 vulnerabilities. Slither: every result explained in [QA.md](QA.md). 1 Medium and 2 Low findings fixed.
+**Quality (after the evening audit):** 31 / 31 tests pass, including fuzz tests (200 random programs, 1,257 steps, the money invariant held after every one). ESLint + Solhint clean. `npm audit --omit=dev` 0 vulnerabilities. Slither: every result explained in [QA.md](QA.md). 1 Medium and 3 Low findings fixed in total (the evening one is E1 below).
+
+## Evening update
+
+The evening audit asked a new question of the *fixed* contracts: "where can money end up that nobody can ever move?" It found **E1 (Low)**: `SafeBank.transferBalance` accepted the bank's own address as the receiver. A balance parked there is lost, because a contract never calls its own `withdraw()`. One wrong address, no attacker needed. Now it reverts with `InvalidRecipient`. See [QA.md](QA.md#evening-audit).
+
+Exercises ([`exercises/`](exercises)): build a commitment by hand and see why `abi.encode` (not packed) matters (easy), a **pull-payment auction** that a bidder who cannot receive ETH cannot block (medium), and a **fuzz challenge**: `LeakyBank` has one deleted line, and a property test "ETH held = sum of balances" finds the bug without being told where to look. In my run it broke `LeakyBank` in **2 steps** (Carol deposits 0.001 ETH, then sends it to Alice) and `SafeBank` survived 100 random programs.
+
+### What I'd explore next
+
+- **Read-only re-entrancy**: a view function that reads state in the middle of someone else's call. The lock on `withdraw` does not protect other contracts that trust `balanceOf`.
+- **Private mempools and MEV protection (Flashbots)**: instead of hiding the answer with commit–reveal, hide the whole transaction from bots.
+- **Formal verification / symbolic execution**: prove "no input breaks the invariant" instead of testing 1,257 random steps.
 
 ## Key takeaways
 

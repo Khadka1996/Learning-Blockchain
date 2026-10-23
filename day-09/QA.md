@@ -91,3 +91,37 @@ Slither on the **deliberately broken** contracts, a useful lesson in itself:
 
   26 passing (15s)
 ```
+
+## Evening audit
+
+**Approach:** an independent second pass, as an outside auditor who did not write the morning code. Re-ran every tool, then attacked the *fixed* contracts again with questions the morning review had not asked: where can value be parked where nobody can reach it, can a pending ownership be hijacked, and does sending to yourself create money. Each attack is a test in [`test/06-audit.test.js`](test/06-audit.test.js); the exercise contracts have their own tests in [`test/exercises.test.js`](test/exercises.test.js).
+**Rounds:** 2 (round 1: 1 real issue found · round 2: fixed, everything re-run, clean).
+
+| ID | Severity | How found | Description | Fix | Proving test |
+|----|----------|-----------|-------------|-----|--------------|
+| E1 | Low | Manual review: "where can ETH end up that nobody can move?" | **`SafeBank.transferBalance(address(bank), x)` parked the user's balance on the bank's own address.** The bank is a contract that never calls its own `withdraw()`, so that money could never be taken out again. No attacker needed, one wrong address is enough. | `transferBalance` reverts with `InvalidRecipient` when `to == address(this)`. | `E1: SafeBank refuses to 'transfer' a balance to the bank itself` |
+| E2 | Info | Attack attempt (kept as a regression guard) | Self-transfer (`transferBalance` to yourself) could have doubled a balance if the code had read the balance once and written it twice. And could a stranger call `acceptOwnership()` while a hand-over is pending? | No change needed: the balance is re-read after the debit, and `Ownable2Step` only lets the nominated address accept. | `E2 (attack, safe): a self-transfer changes nothing, and a stranger cannot accept a pending ownership` |
+
+**Attacked and found safe (already covered by morning tests, re-checked by hand):**
+- **Copying a commitment** (Bob sends Alice's sealed envelope as his own): his reveal fails, because the address is part of the hash.
+- **Commit and reveal in the same block**: refused with `RevealTooEarly`.
+- **Pulling after a failed send**: the record is zeroed before the call, and the whole transaction rolls back if the send fails, so nothing is lost or paid twice.
+- **Forced ETH** (`selfdestruct`): accounting uses records, not `address(this).balance` (morning I1).
+- **Rounding / overflow**: there is no division; Solidity 0.8 checks every addition.
+- **Gas DoS**: no function loops over users.
+
+**Known issues (unchanged):** K1 (weak answers can be guessed offline), K2 (censorship of a reveal), K3 (the current king's bid stays locked until outbid).
+
+**Exercise contracts:** `LeakyBank` is broken on purpose (the fuzz script finds it in 2 steps); `PullAuction` and `StubbornBidder` are tested in `exercises.test.js`. Slither adds one more informational result for `PullAuction` (low-level call, needed to send ETH; block timestamp used for a one-day deadline, which is fine at that precision).
+
+### Final green output
+
+```
+npm test                   31 passing (8s)
+npm run lint               ESLint + Solhint: 0 errors, 0 warnings
+npm audit --omit=dev       found 0 vulnerabilities
+slither (102 detectors)    contracts/fixed: same results as the morning, all explained above; nothing new open
+npm run ex:easy|medium|challenge   all three run; LeakyBank broken in 2 steps, SafeBank survives 100 programs
+```
+
+No high or medium finding remains open.

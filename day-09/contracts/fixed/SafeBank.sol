@@ -20,6 +20,7 @@ contract SafeBank is ReentrancyGuard {
     error TransferFailed();
     error InsufficientBalance(uint256 available, uint256 needed);
     error ZeroAddress();
+    error InvalidRecipient();
 
     function deposit() external payable nonReentrant {
         balanceOf[msg.sender] += msg.value;
@@ -29,6 +30,8 @@ contract SafeBank is ReentrancyGuard {
     /// @notice Move part of your balance to someone else inside the bank (no ETH leaves).
     function transferBalance(address to, uint256 amount) external nonReentrant {
         if (to == address(0)) revert ZeroAddress();
+        // The bank cannot call its own withdraw(), so a balance parked on its own address is lost forever (QA E1).
+        if (to == address(this)) revert InvalidRecipient();
         uint256 available = balanceOf[msg.sender];
         if (amount > available) revert InsufficientBalance(available, amount);
         balanceOf[msg.sender] = available - amount;
