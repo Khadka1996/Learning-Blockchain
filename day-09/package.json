@@ -1,0 +1,35 @@
+{
+  "name": "day-09-security",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Day 09 of Learning Blockchain — smart-contract security: re-entrancy, access control, tx.origin phishing, front-running and denial of service, each as a vulnerable contract, a working exploit and a fix (Hardhat, local chain)",
+  "scripts": {
+    "start": "hardhat run src/demo.js",
+    "node": "hardhat node",
+    "demo:localhost": "hardhat run src/demo.js --network localhost",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "lint": "eslint . && solhint \"contracts/**/*.sol\"",
+    "lint:sol": "solhint \"contracts/**/*.sol\"",
+    "slither": "slither . --hardhat-ignore-compile",
+    "clean": "hardhat clean"
+  },
+  "author": "Manish Khadka",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@nomicfoundation/hardhat-chai-matchers": "2.1.2",
+    "@nomicfoundation/hardhat-ethers": "3.1.0",
+    "@nomicfoundation/hardhat-network-helpers": "1.1.0",
+    "@openzeppelin/contracts": "5.0.2",
+    "chai": "4.5.0",
+    "eslint": "9.39.5",
+    "ethers": "6.15.0",
+    "fast-check": "3.23.2",
+    "globals": "15.15.0",
+    "hardhat": "2.26.3",
+    "solc": "0.8.24",
+    "solhint": "5.2.0"
+  }
+}
