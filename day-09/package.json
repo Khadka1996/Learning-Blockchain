@@ -12,7 +12,10 @@
     "lint": "eslint . && solhint \"contracts/**/*.sol\"",
     "lint:sol": "solhint \"contracts/**/*.sol\"",
     "slither": "slither . --hardhat-ignore-compile",
-    "clean": "hardhat clean"
+    "clean": "hardhat clean",
+    "ex:easy": "hardhat run exercises/solutions/easy.js",
+    "ex:medium": "hardhat run exercises/solutions/medium.js",
+    "ex:challenge": "hardhat run exercises/solutions/challenge.js"
   },
   "author": "Manish Khadka",
   "license": "MIT",

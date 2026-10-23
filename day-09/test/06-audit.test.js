@@ -41,4 +41,24 @@ describe("7. QA findings (regression tests)", function () {
     await game.connect(alice).claimThrone({ value: eth(1) }); // prize is tracked, not read from the balance
     expect(await game.prize()).to.equal(eth(1));
   });
+  it("E1: SafeBank refuses to 'transfer' a balance to the bank itself (nobody could ever withdraw it)", async function () {
+    const [, alice] = await ethers.getSigners();
+    const bank = await ethers.deployContract("SafeBank");
+    await bank.connect(alice).deposit({ value: eth(2) });
+    await expect(bank.connect(alice).transferBalance(await bank.getAddress(), eth(1)))
+      .to.be.revertedWithCustomError(bank, "InvalidRecipient");
+    expect(await bank.balanceOf(alice.address)).to.equal(eth(2)); // nothing was moved
+  });
+
+  it("E2 (attack, safe): a self-transfer changes nothing, and a stranger cannot accept a pending ownership", async function () {
+    const [owner, alice, mallory] = await ethers.getSigners();
+    const bank = await ethers.deployContract("SafeBank");
+    await bank.connect(alice).deposit({ value: eth(2) });
+    await bank.connect(alice).transferBalance(alice.address, eth(2));
+    expect(await bank.balanceOf(alice.address)).to.equal(eth(2)); // no coins minted by sending to yourself
+    const wallet = await ethers.deployContract("SafeWallet", [owner.address]);
+    await wallet.connect(owner).transferOwnership(alice.address);
+    await expect(wallet.connect(mallory).acceptOwnership()).to.be.revertedWithCustomError(wallet, "OwnableUnauthorizedAccount");
+    expect(await wallet.owner()).to.equal(owner.address);
+  });
 });
