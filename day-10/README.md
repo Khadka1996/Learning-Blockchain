@@ -77,7 +77,7 @@ npm install
 npm start               # guided tour: pool, price impact, fees, sandwich attack, donation attack
 npm run node            # or: local node in one terminal …
 npm run demo:localhost  # … and the tour against it in another
-npm test                # 25 tests (~10 s; FUZZ_RUNS=500 npm test for a longer fuzz)
+npm test                # 33 tests (~11 s; FUZZ_RUNS=500 npm test for a longer fuzz)
 npm run lint            # ESLint + Solhint
 npm run slither         # static analysis (after: npx hardhat clean && npm run compile)
 ```
@@ -92,7 +92,9 @@ npm run slither         # static analysis (after: npx hardhat clean && npm run c
 | [`test/01-pair.test.js`](test/01-pair.test.js) | Liquidity, swaps, fees, price impact, input checks |
 | [`test/02-attacks.test.js`](test/02-attacks.test.js) | Sandwich with and without a limit, donation/inflation attack, fee-on-transfer token, re-entrant token |
 | [`test/03-invariants.test.js`](test/03-invariants.test.js) | fast-check fuzzing: random programs of add / swap / remove by 3 users, 4 rules checked after every step |
-| [`test/04-audit.test.js`](test/04-audit.test.js) | Regression tests for the QA findings ([QA.md](QA.md)) |
+| [`test/04-audit.test.js`](test/04-audit.test.js) | Regression tests for the QA findings ([QA.md](QA.md)), morning and evening |
+| [`exercises/`](exercises) | 3 evening exercises (easy / medium / challenge) with tested solutions (`npm run ex`) |
+| [`test/05-exercises.test.js`](test/05-exercises.test.js) | Checks the exercise solutions and the new `quoteAddLiquidity` view |
 
 Design choices that matter for safety (each one has a test):
 
@@ -141,6 +143,20 @@ Things that surprised me:
 - **The fuzzer found my test was wrong, not the contract**: my first run reported reverts as "unrecognized custom error" and failed. I had to decode errors with the pool's ABI before the fuzzer could tell expected reverts from real bugs.
 
 **Quality:** 25 / 25 tests pass. Fuzz: 150 random programs, 946 steps in my final run (it changes every run), all four rules held after every step, plus 2,000 random "buy then sell back" checks that never made a profit. ESLint + Solhint clean. `npm audit --omit=dev`: 0 vulnerabilities. Slither: every result explained in [QA.md](QA.md). 2 Low findings fixed: L1 in the contract, T1 in my own fuzz test.
+
+## Evening update
+
+- **Independent audit pass:** no Low/Medium/High findings. I tried the edges the morning tests skipped: deadline off-by-one, a pool emptied by every provider, a pool opened at a silly price, and a token that takes balance away. Details in [QA.md](QA.md) (E1–E4, new known issue K6).
+- **Improvement:** `quoteAddLiquidity()` tells a frontend exactly what a deposit would take and mint, so `minShares` can be set correctly (the P1 lesson, now one call).
+- **Exercises:** price-impact table, measuring **impermanent loss** on the real contract (formula said −5.72% for a 2× price move; the pool gave −5.68%, the 0.3% fee earned the difference), and the arbitrage bot's exact trade size by bisection. See [`exercises/`](exercises).
+- **Study guide:** [`notes.pdf`](notes.pdf).
+- Quality: 33 / 33 tests, lint clean, `npm audit` 0, Slither reviewed.
+
+## What I'd explore next
+
+- Pack the reserves into one storage slot (`uint112` like Uniswap) and measure the gas saved (Day 11).
+- Add a time-weighted average price (TWAP) so other contracts can read a price that a flash loan cannot move (Day 12).
+- Build a router that swaps across two pools (A→B→C) with one slippage limit.
 
 ## Key takeaways
 

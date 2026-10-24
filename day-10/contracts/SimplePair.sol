@@ -84,6 +84,24 @@ contract SimplePair is ERC20, ReentrancyGuard {
         return getAmountOut(amountIn, rIn, rOut);
     }
 
+    /// @notice Evening improvement: what a deposit would really take and mint right now, so a frontend
+    ///         can set `minShares` from it (QA P1). Pure read; mirrors addLiquidity's maths.
+    function quoteAddLiquidity(uint256 amount0Desired, uint256 amount1Desired)
+        external
+        view
+        returns (uint256 shares, uint256 amount0, uint256 amount1)
+    {
+        uint256 supply = totalSupply();
+        if (supply == 0) {
+            (amount0, amount1) = (amount0Desired, amount1Desired);
+            uint256 root = Math.sqrt(amount0 * amount1);
+            shares = root > MINIMUM_LIQUIDITY ? root - MINIMUM_LIQUIDITY : 0;
+        } else {
+            (amount0, amount1) = _optimalAmounts(amount0Desired, amount1Desired, reserve0, reserve1);
+            shares = Math.min((amount0 * supply) / reserve0, (amount1 * supply) / reserve1);
+        }
+    }
+
     // ─────────────────────────── liquidity ───────────────────────────
 
     /// @notice Deposit both tokens and receive LP shares.
