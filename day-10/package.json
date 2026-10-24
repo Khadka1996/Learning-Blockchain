@@ -2,7 +2,7 @@
   "name": "day-10-amm",
   "version": "1.0.0",
   "private": true,
-  "description": "Day 10 of Learning Blockchain — DeFi: a constant-product AMM (x·y=k) with a 0.3% fee, LP shares, slippage protection, a price-manipulation attack and invariant/fuzz tests (Hardhat, local chain)",
+  "description": "Day 10 of Learning Blockchain \u2014 DeFi: a constant-product AMM (x\u00b7y=k) with a 0.3% fee, LP shares, slippage protection, a price-manipulation attack and invariant/fuzz tests (Hardhat, local chain)",
   "scripts": {
     "start": "hardhat run src/demo.js",
     "node": "hardhat node",
@@ -12,7 +12,11 @@
     "lint": "eslint . && solhint \"contracts/**/*.sol\"",
     "lint:sol": "solhint \"contracts/**/*.sol\"",
     "slither": "slither . --hardhat-ignore-compile",
-    "clean": "hardhat clean"
+    "clean": "hardhat clean",
+    "ex": "hardhat test test/05-exercises.test.js",
+    "ex1": "node exercises/solutions/ex1-impact-table.js",
+    "ex2": "hardhat run exercises/solutions/ex2-impermanent-loss.js",
+    "ex3": "node exercises/solutions/ex3-arbitrage-size.js"
   },
   "author": "Manish Khadka",
   "license": "MIT",

@@ -84,3 +84,40 @@ Slither on test helpers / OpenZeppelin:
     ✔ I1: a contract reading the pool in the middle of a swap sees the old, consistent state (no read-only re-entrancy window)
   25 passing
 ```
+
+
+---
+
+## Evening audit
+
+**Auditor stance:** re-read `SimplePair.sol` as an outsider, re-ran every tool, then attacked what the morning tests did not cover: deadline boundary, a pool emptied by all providers, a pool opened at an absurd price, and a token that takes balance away behind the pool's back.
+**Rounds:** 2 (round 1: tools + probes, no code defect found · round 2: new `quoteAddLiquidity` view added and the whole suite, lint, audit and Slither re-run).
+
+| ID | Severity | How found | Description | Fix | Proving test |
+|----|----------|-----------|-------------|-----|--------------|
+| E1 | Info | Manual (boundary values) | Is `deadline == block.timestamp` accepted and `+1 s` rejected? Off-by-one here would expire valid trades or let stale ones run. | No change needed: the check is `block.timestamp > deadline`. | `E1: a deadline equal to the block timestamp is still valid…` |
+| E2 | Info | Manual (DoS / bricking) | Can every provider leave and brick the pool (a reserve at 0 gives a division by zero)? | No change needed: the 1,000 locked shares always keep a sliver in both piles, so a new provider can deposit and trade again. | `E2: after every provider leaves, only dust is left…` |
+| E3 | Info | Manual (front-running the first deposit) | An attacker opens the pool at an absurd price before an honest provider. | No change needed: a later deposit takes only the amounts matching the pool's ratio, the rest stays in the wallet. No loss. | `E3: someone who opens the pool at a silly price…` |
+| E4 | Info | Manual (token assumptions) | A token that can reduce the pool's balance (negative rebase, confiscation) makes the books larger than reality. | Known issue K6 (below). | `E4: a token that confiscates balance…` |
+| I3 | Info | Slither `reentrancy-*` | The new view `quoteAddLiquidity` reads the reserves, so Slither lists it as a cross-function reader (same class as I1). | None: it is a view, and mid-swap it sees the old, consistent reserves and supply. | covered by the I1 test |
+
+No Low, Medium or High findings in the evening pass.
+
+**Improvement from the audit (P1 follow-up):** `quoteAddLiquidity(amount0Desired, amount1Desired)` returns the amounts the pool would really take and the shares it would mint, so a frontend can set `minShares` from it. Proven exactly equal to `addLiquidity` in `improvement: quoteAddLiquidity predicts addLiquidity exactly`.
+
+### Known issues added tonight
+
+| ID | Description | Why it stays |
+|----|-------------|--------------|
+| K6 | **Negative-rebase / confiscating tokens make the pool insolvent.** If the token reduces the pool's balance, the books (`reserve0/1`) are higher than the real balance; the first providers to leave are paid in full and the last one cannot withdraw. | Tracking reserves internally is what stops donation attacks (I2). Uniswap V2 has `sync()` for this, but `sync` lets anyone rewrite the books. Rule: only list tokens whose balances only change on transfers. |
+
+### Final green output (evening)
+
+```
+  33 passing (~11 s)
+    25 morning tests · 4 evening audit tests (E1–E4) · 4 exercise/improvement tests
+  fuzz: 150 programs, 860 steps, 184 reverted as expected
+  ESLint + Solhint: 0 errors, 0 warnings
+  npm audit --omit=dev: found 0 vulnerabilities
+  Slither: 102 detectors, 18 contracts, 32 results, none open in SimplePair.sol
+```
