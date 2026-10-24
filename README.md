@@ -33,7 +33,7 @@ Each day has its own folder with notes, working code, tests, a QA & security rep
 | 08 | 22 Oct | [NFTs: ERC-721 & ERC-1155](day-08) | An ERC-721 from scratch (differential-tested vs OpenZeppelin), a paid collection with royalties (ERC-2981) and a re-entrant-mint attack & fix, ERC-1155 game items | ✅ |
 | **Phase 3 — Advanced** | | | | |
 | 09 | 23 Oct | [Smart-contract security](day-09) | 5 broken contracts (re-entrancy, access control, tx.origin, front-running, DoS), a working exploit and a fix for each, fuzz invariants, Slither | ✅ |
-| 10 | 24 Oct | DeFi: AMM from scratch | Constant-product (x·y=k) swap pool + invariant tests | ⏳ |
+| 10 | 24 Oct | [DeFi: AMM from scratch](day-10) | Constant-product (x·y=k) swap pool with a 0.3% fee and LP shares, a working sandwich bot vs slippage limits, donation & weird-token attacks, fuzz invariants | 🔨 |
 | 11 | 25 Oct | Gas optimisation & upgradeable contracts | Storage packing, custom errors, UUPS proxy | ⏳ |
 | 12 | 26 Oct | Oracles, Layer 2 & cross-chain | Price-feed consumer, rollups explained, bridge risks | ⏳ |
 | 13 | 27 Oct | Full-stack dApp | Frontend + MetaMask + Sepolia deployment | ⏳ |
