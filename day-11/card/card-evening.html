@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+
+
+*{box-sizing:border-box;margin:0;padding:0}body{width:1080px;height:1350px;font-family:Inter,Arial,sans-serif;color:#fff;background:#0B1F3A;background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);background-size:54px 54px;padding:72px;display:flex;flex-direction:column}.top{display:flex;align-items:center;gap:20px}.pill{background:#2563EB;padding:10px 22px;border-radius:999px;font-weight:700;font-size:26px;letter-spacing:1px}.tag{color:#94A3B8;font-size:26px;font-weight:500}h1{font-size:76px;line-height:1.08;font-weight:800;margin-top:52px;letter-spacing:-1.5px}h1 em{font-style:normal;color:#22D3EE}.viz{margin-top:48px;background:#0F172A;border:1px solid #1E3A5F;border-radius:24px;padding:34px 40px}.flow{display:flex;align-items:center;gap:22px}.box{flex:1;border:2px solid #22D3EE;border-radius:18px;padding:18px 12px;text-align:center}.box b{display:block;font-size:30px;color:#22D3EE}.box span{font-size:22px;color:#94A3B8}.arrow{font-size:38px;color:#64748B}.rows{border-top:1px solid #1E3A5F;margin-top:28px;padding-top:20px}.row{display:flex;justify-content:space-between;font-family:"DejaVu Sans Mono",monospace;font-size:25px;color:#CBD5E1;margin-bottom:14px}.ok{color:#34D399}.bad{color:#F87171}.warn{color:#FBBF24}.stats{display:flex;gap:16px;margin-top:28px}.stats div{flex:1;background:#0F172A;border:1px solid #1E3A5F;border-radius:18px;padding:18px 20px}.stats b{display:block;font-size:46px;font-weight:800;color:#22D3EE}.stats span{font-size:21px;color:#94A3B8}ul{list-style:none;margin-top:46px}li{font-size:31px;color:#CBD5E1;margin-bottom:20px}li:before{content:"→ ";color:#22D3EE;font-weight:700}.foot{margin-top:auto}.bar{display:flex;gap:8px;margin-bottom:22px}.bar i{flex:1;height:10px;border-radius:5px;background:#1E3A5F}.bar i.on{background:#22D3EE}.by{font-size:22px;color:#94A3B8;display:flex;justify-content:space-between}.by b{color:#fff}
+/*day09*/.tbl{width:100%;border-collapse:collapse;font-size:27px}.tbl th{text-align:left;color:#94A3B8;font-weight:600;font-size:21px;letter-spacing:1px;text-transform:uppercase;padding:0 0 14px}.tbl td{padding:18px 0;border-top:1px solid #1E3A5F;color:#E2E8F0}.tbl td.bad,.tbl td.ok{font-family:"DejaVu Sans Mono",monospace;font-size:24px}.tbl th:nth-child(2),.tbl th:nth-child(3),.tbl td:nth-child(2),.tbl td:nth-child(3){text-align:right}
+h1{margin-top:64px}.viz{margin-top:60px;padding:40px 44px}ul{margin-top:58px}li{margin-bottom:20px}
+
+.pool{display:flex;align-items:center;justify-content:center;gap:26px}.pile{border:2px solid #22D3EE;border-radius:18px;padding:20px 28px;text-align:center;min-width:250px}.pile b{display:block;font-size:40px;color:#22D3EE;font-weight:800}.pile span{font-size:21px;color:#94A3B8}.op{font-size:44px;color:#64748B;font-weight:700}.k{font-size:40px;font-weight:800;color:#fff}
+.cap{margin-top:34px;padding-top:28px;border-top:1px solid #1E3A5F;font-size:25px;color:#94A3B8}
+.brow{display:flex;align-items:center;gap:18px;margin-top:26px}.blab{width:260px;font-size:25px;color:#CBD5E1}.btrack{flex:1;height:40px;background:#132542;border-radius:8px;overflow:hidden}.bfill{display:block;height:40px;border-radius:8px}.bval{width:150px;text-align:right;font-family:"DejaVu Sans Mono",monospace;font-size:25px}
+
+.badge{margin-left:auto;background:#065F46;color:#6EE7B7;border-radius:999px;padding:10px 22px;font-size:26px;font-weight:700}
+.tbl td.ok{color:#34D399}.tbl td.bad{color:#F87171}.tbl td.warn{color:#FBBF24;font-family:"DejaVu Sans Mono",monospace;font-size:24px}</style>
+</head><body>
+<div class="top"><span class="pill">DAY 11 / 15</span><span class="tag">#LearningBlockchain · evening</span><span class="badge">&#10003; understood</span></div>
+<h1>A second look found <em>2 small bugs</em>. Both fixed.</h1>
+<div class="viz">
+<div class="cap" style="margin-top:0;padding-top:0;border:0">Two small mistakes found by testing the edges:</div>
+<table class="tbl" style="margin-top:26px"><tr><th>Mistake</th><th>Before</th><th>After</th></tr>
+<tr><td>Huge reward number</td><td class="bad">crash</td><td class="ok">clear error</td></tr>
+<tr><td>Deposit of 0 ETH</td><td class="bad">wrong excuse</td><td class="ok">right error</td></tr>
+<tr><td>Tests passing</td><td class="warn">31</td><td class="ok">39</td></tr>
+<tr><td>Gas saved, 50 members</td><td class="warn">70.4%</td><td class="ok">69.7%</td></tr></table>
+</div>
+<ul><li>Fewer storage boxes = the biggest saving</li><li>An upgrade keeps the address and the money</li><li>Never reorder variables in an upgrade</li></ul>
+<div class="foot"><div class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div><div class="by"><b>Manish Khadka</b><span>github.com/Khadka1996/Learning-Blockchain</span></div></div>
+</body></html>

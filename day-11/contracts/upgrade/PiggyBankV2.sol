@@ -32,6 +32,8 @@ contract PiggyBankV2 is PiggyBankV1 {
     }
 
     function deposit() external payable override {
+        // QA E5: say "ZeroAmount" first, so a 0-value call is never blamed on the cap.
+        if (msg.value == 0) revert ZeroAmount();
         if (paused) revert DepositsPaused();
         uint256 cap = maxPerUser;
         uint256 newBalance = balanceOf[msg.sender] + msg.value;

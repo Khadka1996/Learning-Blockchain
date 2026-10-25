@@ -74,9 +74,10 @@ contract ClubOptimized {
             address who = list[i];
             Member storage m = members[who];
             if (m.joinedAt == 0) revert NotMember(who);
-            uint256 newPoints = uint256(m.points) + amount;
-            if (newPoints > type(uint32).max) revert PointsOverflow(who);
-            m.points = uint32(newPoints);
+            // QA E1: compare by subtraction so a huge `amount` gives PointsOverflow, not a raw Panic(0x11).
+            uint256 room = type(uint32).max - uint256(m.points);
+            if (amount > room) revert PointsOverflow(who);
+            m.points = uint32(uint256(m.points) + amount);
             emit PointsAdded(who, amount);
             // SAVE 7 — i < len, so ++i can never overflow
             unchecked {

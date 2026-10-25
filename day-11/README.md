@@ -1,6 +1,6 @@
 # Day 11 — Gas optimisation & upgradeable contracts
 
-> Day 10 ended with a note: "pack the reserves and measure the gas". Today is that day. I wrote the **same contract twice**, once the obvious way and once the careful way, proved with a differential fuzzer that both behave **identically**, and measured every transaction from real receipts: the careful version is up to **70% cheaper**. Then the second half of the day: a contract that can be **upgraded** without changing its address or losing a single balance (a UUPS proxy), and the classic upgrade mistake that silently scrambles everyone's money.
+> Day 10 ended with a note: "pack the reserves and measure the gas". Today is that day. I wrote the **same contract twice**, once the obvious way and once the careful way, proved with a differential fuzzer that both behave **identically**, and measured every transaction from real receipts: the careful version is up to **70% cheaper** (69.7% for a 50-member batch). Then the second half of the day: a contract that can be **upgraded** without changing its address or losing a single balance (a UUPS proxy), and the classic upgrade mistake that silently scrambles everyone's money.
 
 ## Part A — Gas: why the same job can cost 3× more
 
@@ -78,7 +78,7 @@ cd day-11
 npm install
 npm start               # guided tour: gas report + UUPS upgrade V1 -> V2
 npm run gas             # just the gas report
-npm test                # 31 tests (~4 s; FUZZ_RUNS=200 npm test for a longer differential fuzz)
+npm test                # 39 tests (~4 s; FUZZ_RUNS=200 npm test for a longer differential fuzz)
 npm run lint            # ESLint + Solhint
 npm run slither         # static analysis (after: npx hardhat clean && npm run compile)
 ```
@@ -94,7 +94,8 @@ npm run slither         # static analysis (after: npx hardhat clean && npm run c
 | [`src/demo.js`](src/demo.js) | The guided tour (`npm start`) |
 | [`test/01-gas-club.test.js`](test/01-gas-club.test.js) | Behaviour tests for both clubs, custom-error tests, **differential fuzz** (fast-check), gas assertions |
 | [`test/02-upgrade.test.js`](test/02-upgrade.test.js) | Proxy deploy, upgrade keeps state, access control, locked implementation, brick protection, reordered-storage disaster |
-| [`test/03-audit.test.js`](test/03-audit.test.js) | Regression tests for the QA findings ([QA.md](QA.md)) |
+| [`test/03-audit.test.js`](test/03-audit.test.js) · [`04-evening-audit.test.js`](test/04-evening-audit.test.js) | Regression tests for the QA findings ([QA.md](QA.md)) |
+| [`exercises/`](exercises) · [`test/05-exercises.test.js`](test/05-exercises.test.js) | Evening exercises, solutions and their tests (`npm run ex`) |
 
 ## Results from my run
 
@@ -103,14 +104,14 @@ npm run slither         # static analysis (after: npx hardhat clean && npm run c
 ```
 A. Gas optimisation
 action                              naive  optimized      saved   %
-deploy                            613,601    540,032     73,569   12.0%
+deploy                            613,601    549,965     63,636   10.4%
 join (no referrer)                 96,580     67,939     28,641   29.7%
 join (with referrer)              146,331     78,825     67,506   46.1%
-addPointsBatch (10 members)       299,741    103,494    196,247   65.5%
-addPointsBatch (50 members)     1,382,563    408,594    973,969   70.4%
-addPointsBatch again (50)         527,563    408,594    118,969   22.6%
+addPointsBatch (10 members)       299,741    105,684    194,057   64.7%
+addPointsBatch (50 members)     1,382,539    419,580    962,959   69.7%
+addPointsBatch again (50)         527,539    419,580    107,959   20.5%
 withdraw                           30,843     28,743      2,100    6.8%
-bytecode size (bytes)               2,383      2,253        130    5.5%
+bytecode size (bytes)               2,383      2,299         84    3.5%
 
 B. Upgradeable contract (UUPS proxy)
    1. Deployed PiggyBank V1 behind proxy 0x8A93d247134d91e0de6f96547cB0204e5BE8e5D8
@@ -129,14 +130,28 @@ B. Upgradeable contract (UUPS proxy)
 (The batch rows change by a few gas between runs: the members are random addresses, and calldata zero-bytes are cheaper than non-zero bytes.)
 
 Things that surprised me:
-- **Packing is where the big money is.** Rewarding 50 brand-new members: 1,382,563 → 408,594 gas (−70%). Most of that is one fact: in the naive club each member's `points` box starts **empty** (20,000 gas to fill), while in the packed club it shares a box that `join` already filled (2,900 gas).
-- **Without packing, the other tricks still save 22.6%.** The "again" row rewards the same 50 members a second time, so every box is already non-zero in **both** versions. What's left is the effect of calldata, cached length, `unchecked`, one total write and immutables.
+- **Packing is where the big money is.** Rewarding 50 brand-new members: 1,382,539 → 419,580 gas (−69.7%). Most of that is one fact: in the naive club each member's `points` box starts **empty** (20,000 gas to fill), while in the packed club it shares a box that `join` already filled (2,900 gas).
+- **Without packing, the other tricks still save 20.5%.** The "again" row rewards the same 50 members a second time, so every box is already non-zero in **both** versions. What's left is the effect of calldata, cached length, `unchecked`, one total write and immutables.
 - **Immutables are free money.** `withdraw` saves exactly **2,100 gas**: one cold storage read of `owner`, gone.
-- **Custom errors made the contract smaller *and* more useful.** 130 fewer bytes, and `WrongFee(1, 10000000000000000)` tells the user what went wrong.
+- **Custom errors made the contract smaller *and* more useful.** 84 fewer bytes, and `WrongFee(1, 10000000000000000)` tells the user what went wrong.
 - **An upgrade really is just one storage slot.** The ERC-1967 slot changed from `0xb9bE…` to `0x4091…`; the address, the balances and the ETH didn't move.
 - **The storage-layout checker is not optional.** The reordered V2 compiled cleanly and Solidity said nothing. Only the plugin noticed.
 
-**Quality:** 31 / 31 tests pass. Differential fuzz: 40 random programs (211 steps in my final run; it changes every run) gave identical results on both clubs. ESLint + Solhint clean. `npm audit --omit=dev`: 0 vulnerabilities. Slither: 10 results, all explained in [QA.md](QA.md) (3 of them point at the naive club's wastes, which are there on purpose). 1 Low finding fixed (two-step ownership).
+**Quality:** 39 / 39 tests pass (31 morning + 5 evening-audit + 3 exercises). Differential fuzz: 40 random programs (211 steps in my final run; it changes every run) gave identical results on both clubs. ESLint + Solhint clean. `npm audit --omit=dev`: 0 vulnerabilities. Slither: 10 results, all explained in [QA.md](QA.md) (3 of them point at the naive club's wastes, which are there on purpose). 3 Low findings fixed (two-step ownership; typed overflow error; zero-deposit error order).
+
+## Evening update
+
+A second, independent review of the day's code found two small mistakes, both fixed with a failing test first:
+
+- **E1 — a raw crash instead of a clear error.** Rewarding a member who already had points with an absurdly large number failed with Solidity's generic `Panic(0x11)`. Now it says `PointsOverflow(address)`, so you know *who* overflowed. The check costs about 10 gas per member (the 50-member batch went from 408,594 to 419,580 gas, still 69.7% cheaper than naive).
+- **E5 — the wrong excuse.** After the owner lowered the cap, depositing **0** ETH was blamed on the cap. The zero check now comes first.
+
+Exercises (3, with tested solutions): [`exercises/`](exercises). Full findings: [QA.md](QA.md#evening-audit). Study guide: [`notes.pdf`](notes.pdf).
+
+### What I'd explore next
+- Add `Ownable2Step` to the packed club and measure what one extra storage slot costs.
+- Put the upgrade key behind a `TimelockController` and a multisig, then write the "users can exit before the upgrade lands" test.
+- Try ERC-7201 namespaced storage for V2's new variables instead of appending.
 
 ## Key takeaways
 

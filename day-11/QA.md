@@ -96,3 +96,101 @@
   31 passing (3s)
 
 ```
+
+
+---
+
+## Evening audit
+
+**Method:** independent second pass, as an outside auditor who did not write the code: re-ran everything from a clean compile, then attacked the two production contracts with boundary values (uint32 max, `type(uint256).max`), duplicates in batches, partial-failure batches, error precedence under a lowered cap, and a 200-program differential fuzz (3 runs, `FUZZ_RUNS=200`, about 1,250 steps each, identical results every time). Tools: ESLint, Solhint, `npm audit --omit=dev`, Slither (no new results in production code; the earlier I1–I4 still apply).
+**Rounds:** 2 (round 1: 5 probe tests, 2 failed, both fixed · round 2: everything re-run, green).
+
+| ID | Severity | How found | Description | Fix | Proving test |
+|----|----------|-----------|-------------|-----|--------------|
+| E1 | Low | Boundary attack (`amount = 2^256-1`) | `ClubOptimized.addPointsBatch` added `points + amount` in checked arithmetic, so a huge reward to a member who already had points failed with a raw `Panic(0x11)` instead of the typed `PointsOverflow(address)` error. Nothing was lost (it reverted), but callers and monitoring could not tell *which* member overflowed, and the error was inconsistent with the zero-points case. | Compare by subtraction: `room = uint32.max - points; if (amount > room) revert PointsOverflow(who)`. Costs about 10 gas per member (batch of 50: 408,594 → 419,580 gas). | `E1: a huge reward on a member who already has points gives the typed PointsOverflow error, not a raw Panic` |
+| E5 | Low | Error-precedence probe (cap lowered below a balance) | `PiggyBankV2.deposit()` checked the cap before the zero amount, so after the owner lowered the cap a **0-value** deposit was reported as `CapExceeded` instead of `ZeroAmount`, which blames the wrong thing and confuses wallets that simulate the call. No funds at risk. | Check `msg.value == 0` first in `deposit()`. | `E5: a deposit of 0 while capped is rejected cleanly and the box stays consistent` |
+| E2 | Info | Probe: same address twice in a batch | Does the optimized club double-count or drift `totalPoints`? | No: each entry is rewarded once per appearance; `totalPoints = len * amount` stays correct on both clubs. | `E2` |
+| E3 | Info | Probe: uint32 boundary through `join()` | Is the cap exact, and does a failed referral leave half-written state? | Exact (max allowed, +1 refused) and a failed `join` changes nothing (`memberCount` unchanged). | `E3` |
+| E4 | Info | Probe: bad address in the middle of a batch | Partial rewards? | The whole transaction reverts; nobody keeps points. | `E4` |
+
+### Known issues (new)
+
+| ID | Description | Why it stays |
+|----|-------------|--------------|
+| K6 | `addPointsBatch` has no size limit, so a huge list could run out of gas. | Owner-only function and the owner chooses the list; a failed call reverts completely and can be retried in smaller batches. No user can trigger it. |
+
+### Final green output (evening)
+
+| Tool | Result |
+|---|---|
+| `npm test` | **39 / 39 pass** (31 morning + 5 evening-audit + 3 exercises) |
+| 200-program differential fuzz ×3 | identical results on both clubs every time |
+| ESLint + Solhint | 0 errors, 0 warnings |
+| `npm audit --omit=dev` | 0 vulnerabilities |
+| Slither | no new results in production code |
+
+```
+  ClubNaive — behaviour
+    ✔ joins with the exact fee; referrer earns 10 points (472ms)
+    ✔ rejects wrong fee, double join, self-referral and unknown referrer (68ms)
+    ✔ only the owner can add points or withdraw; batch needs members
+    ✔ an empty batch changes nothing
+
+  ClubOptimized — behaviour
+    ✔ joins with the exact fee; referrer earns 10 points
+    ✔ rejects wrong fee, double join, self-referral and unknown referrer
+    ✔ only the owner can add points or withdraw; batch needs members
+    ✔ an empty batch changes nothing
+
+  ClubOptimized — custom errors and limits
+    ✔ reverts with typed custom errors that carry data
+    ✔ caps points at uint32 instead of silently wrapping (packing must not lose data)
+
+  Differential fuzz — naive and optimized must behave identically
+      (40 programs, 200 steps, identical results)
+    ✔ 40 random programs of join / batch / withdraw give the same results (2133ms)
+
+  Gas report — the optimized version is cheaper for every action
+    ✔ every measured row is strictly lower for ClubOptimized (397ms)
+
+  PiggyBank — UUPS upgradeable proxy
+    V1
+      ✔ deposits and withdraws through the proxy; money sits in the proxy (145ms)
+      ✔ rejects zero amounts and over-withdrawals
+      ✔ initialize can run only once (no takeover by re-initializing)
+      ✔ the bare implementation is locked: nobody can initialize it
+      ✔ blocks re-entrancy on withdraw
+    upgrade V1 -> V2
+      ✔ keeps the same address, balances and ETH; only the logic changes (73ms)
+      ✔ new features: per-user cap and pause (withdrawals still allowed while paused)
+      ✔ initializeV2 runs once and only for the owner
+      ✔ a stranger cannot upgrade
+      ✔ refuses to upgrade to a contract without UUPS (would brick the proxy)
+      ✔ upgradeToAndCall must go through the proxy, not the implementation
+    the classic mistake: reordered storage
+      ✔ hardhat-upgrades refuses the broken V2 before it is deployed
+      ✔ forced anyway, every balance reads from the wrong slot
+
+  QA findings — Day 11
+    ✔ L1: a mistyped new owner cannot take (or lose) upgrade control — ownership is two-step
+    ✔ P1: after an upgrade WITHOUT the init call, nobody but the owner can run initializeV2 (no init front-running) (41ms)
+    ✔ P2: the V2 implementation is locked too
+    ✔ P3: lowering the cap below existing balances never traps money (47ms)
+    ✔ P4: ETH forced into the box (no deposit) does not change anyone's books
+    ✔ P5: plain ETH transfers without deposit() are refused (no silent loss)
+
+  Evening audit — Day 11
+    ✔ E1: a huge reward on a member who already has points gives the typed PointsOverflow error, not a raw Panic
+    ✔ E2: the same address twice in one batch is rewarded twice and totals stay consistent (both clubs)
+    ✔ E3: the points cap is exact at the boundary (uint32 max is allowed, +1 is not) even through join()
+    ✔ E4: a non-member in the middle of a batch reverts the whole batch (no partial rewards)
+    ✔ E5: a deposit of 0 while capped is rejected cleanly and the box stays consistent (45ms)
+
+  Exercises — Day 11
+    ✔ ex1: naive member = 4 slots, packed member = 1 slot, order matters
+    ✔ ex2: the model lands in the right range of the measured saving (69.7% for 50 members)
+    ✔ ex3: V1 -> V2 safe, V1 -> reordered unsafe, and the real proxy agrees on where totalDeposits lives
+
+
+  39 passing (4s)
+```
