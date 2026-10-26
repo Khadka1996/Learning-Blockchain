@@ -110,7 +110,8 @@ cd day-12
 npm install
 npm start          # oracle + bridge tour on a local chain
 npm run rollup     # rollup cost table + fraud proof + 7-day window
-npm test           # 47 tests (unit, attack, fuzz)
+npm test           # 56 tests (unit, attack, fuzz, exercises)
+npm run ex         # only the 3 evening exercises
 npm run lint       # ESLint + Solhint
 npm run slither    # static analysis (after npm run compile)
 ```
@@ -125,7 +126,8 @@ npm run slither    # static analysis (after npm run compile)
 | [`contracts/bridge/NaiveBridge.sol`](contracts/bridge/NaiveBridge.sol) | The "before": three classic bridge bugs |
 | [`src/rollup.js`](src/rollup.js) | Optimistic rollup simulation: state roots, batches, L1 gas model, bisection fraud proof, challenge window |
 | [`src/demo.js`](src/demo.js), [`src/rollup-demo.js`](src/rollup-demo.js), [`src/deploy.js`](src/deploy.js) | Demos and shared deploy/sign helpers |
-| [`test/`](test) | 01 oracle · 02 bridge · 03 rollup · 04 QA findings |
+| [`test/`](test) | 01 oracle · 02 bridge · 03 rollup · 04 QA findings · 05 evening audit · 06 exercises |
+| [`exercises/`](exercises) | Evening exercises and tested solutions (`npm run ex1`, `ex2`, `ex3`) |
 
 **Rollup simplifications** (stated, not hidden): signatures are placeholder bytes (real ones on Day 03); the gas model counts L1 calldata only, before EIP-4844 blobs and without compression (real rollups today are cheaper still); the one-step proof recomputes the root from the full account list instead of a Merkle proof of the touched accounts (Day 04).
 
@@ -188,7 +190,24 @@ Things that surprised me:
 - **The 7-day withdrawal wait is not a bug, it's the security.** It's the time anyone has to prove fraud.
 - **The bridge bug isn't in the crypto.** ECDSA worked perfectly in `NaiveBridge`. The bug was **what** got signed (no deposit id, no chain) and **how** signers were counted.
 
-**Quality:** 47 / 47 tests pass (~7 s), including 3 fuzz properties (price checks, bridge supply ≤ locked, bisection always finds the lie). ESLint + Solhint clean. `npm audit --omit=dev`: 0 vulnerabilities. Slither: 9 results, all informational and explained in [QA.md](QA.md). 3 Low findings fixed during QA.
+**Quality:** 56 / 56 tests pass (47 morning + 6 evening-audit + 3 exercises), including 3 fuzz properties (price checks, bridge supply ≤ locked, bisection always finds the lie). ESLint + Solhint clean. `npm audit --omit=dev`: 0 vulnerabilities. Slither: 9 results, all informational and explained in [QA.md](QA.md). 3 Low findings fixed during QA.
+
+## Evening update
+
+A second, independent review found **one real mistake** in the day's code, fixed with a failing test first:
+
+- **E1 — a bond that could be negative or text.** The rollup simulation's `depositBond` took any value. `-5` quietly *shrank* a sequencer's bond, `NaN` and `1.5` broke the maths, and the text `"5"` became `"05"` (JavaScript glued it on instead of adding) and still counted as "more than zero". The bond is the sequencer's stake, so garbage in meant a fraud proof that pays nonsense. Now it must be a positive whole number, or `BadBond`.
+
+The other five probes found nothing: a validator can't be counted twice even by re-encoding their signature, the price band and grace period are exact at the edges, a Merkle trick that fooled Bitcoin doesn't work here (every leaf includes its position), and the challenge window closes to the second.
+
+**One improvement to the morning code:** `breakEvenBatchSize()` in `src/rollup.js` answers "how many transactions must share a batch before it beats a plain L1 transfer?" It's **3** (a batch of 2 still costs 24,134 gas per transaction, more than 21,000).
+
+Exercises (3, with tested solutions): [`exercises/`](exercises). Full findings: [QA.md](QA.md#evening-audit). Study guide: [`notes.pdf`](notes.pdf).
+
+### What I'd explore next
+- Add the missing half of the bridge: burn the wrapped token and release the locked one (with the same replay protection).
+- Give the rollup challenge a **time limit per move**, so a sequencer that stops answering loses (known issue K5).
+- Replace the fixed validator set with a rotation controlled by a timelock, and add an emergency pause.
 
 ## Key takeaways
 

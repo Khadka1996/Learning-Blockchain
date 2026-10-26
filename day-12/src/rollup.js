@@ -115,6 +115,14 @@ function batchCost(txs) {
   return { txs: txs.length, bytes: data.length, totalGas: total, gasPerTx: total / txs.length };
 }
 
+/** Smallest batch size whose per-transaction L1 cost beats a plain L1 transfer (21,000 gas). */
+function breakEvenBatchSize(maxN = 5000) {
+  for (let n = 1; n <= maxN; n++) {
+    if (batchCost(randomTxs(n, 50)).gasPerTx < L1_TRANSFER_GAS) return n;
+  }
+  return null;
+}
+
 /* ------------------------------ the L1 rollup contract (simulated) ------------------------------ */
 
 class RollupL1 {
@@ -131,6 +139,9 @@ class RollupL1 {
 
   /** The sequencer must lock a bond: it is what a fraud costs them. */
   depositBond(sequencer, amount) {
+    const total = (this.bonds.get(sequencer) ?? 0) + (typeof amount === "number" ? amount : NaN);
+    // Only positive whole numbers, and the running total must stay exact (QA E1).
+    if (!Number.isSafeInteger(amount) || amount <= 0 || !Number.isSafeInteger(total)) throw new Error("BadBond");
     this.bonds.set(sequencer, (this.bonds.get(sequencer) ?? 0) + amount);
   }
 
@@ -254,6 +265,7 @@ module.exports = {
   encodeTx,
   calldataGas,
   batchCost,
+  breakEvenBatchSize,
   RollupL1,
   randomTxs,
   cheatingRoots,

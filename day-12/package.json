@@ -2,7 +2,7 @@
   "name": "day-12-oracles-l2-bridges",
   "version": "1.0.0",
   "private": true,
-  "description": "Day 12 of Learning Blockchain — oracles (mock Chainlink-style feed, staleness / sanity / L2-sequencer checks), Layer 2 rollups (batching + optimistic fraud proofs, simulated) and bridge risks (M-of-N signed bridge with replay protection) on a local Hardhat chain",
+  "description": "Day 12 of Learning Blockchain \u2014 oracles (mock Chainlink-style feed, staleness / sanity / L2-sequencer checks), Layer 2 rollups (batching + optimistic fraud proofs, simulated) and bridge risks (M-of-N signed bridge with replay protection) on a local Hardhat chain",
   "scripts": {
     "start": "hardhat run src/demo.js",
     "rollup": "node src/rollup-demo.js",
@@ -12,7 +12,11 @@
     "lint": "eslint . && solhint \"contracts/**/*.sol\"",
     "lint:sol": "solhint \"contracts/**/*.sol\"",
     "slither": "slither . --hardhat-ignore-compile",
-    "clean": "hardhat clean"
+    "clean": "hardhat clean",
+    "ex": "hardhat test test/06-exercises.test.js",
+    "ex1": "node exercises/solutions/ex1-bisection.js",
+    "ex2": "node exercises/solutions/ex2-breakeven.js",
+    "ex3": "node exercises/solutions/ex3-price-model.js"
   },
   "author": "Manish Khadka",
   "license": "MIT",

@@ -35,7 +35,7 @@ Each day has its own folder with notes, working code, tests, a QA & security rep
 | 09 | 23 Oct | [Smart-contract security](day-09) | 5 broken contracts (re-entrancy, access control, tx.origin, front-running, DoS), a working exploit and a fix for each, fuzz invariants, Slither | ✅ |
 | 10 | 24 Oct | [DeFi: AMM from scratch](day-10) | Constant-product (x·y=k) swap pool with a 0.3% fee and LP shares, a working sandwich bot vs slippage limits, donation & weird-token attacks, fuzz invariants | ✅ |
 | 11 | 25 Oct | [Gas optimisation & upgradeable contracts](day-11) | The same contract written twice (up to 70% less gas, differential-fuzzed), measured gas reports, a UUPS proxy upgraded V1 → V2 without losing a balance, and the reordered-storage disaster | ✅ |
-| 12 | 26 Oct | [Oracles, Layer 2 & bridges](day-12) | A price reader that refuses 6 kinds of bad price (stale, zero, glitch, L2 down), a simulated optimistic rollup whose fraud proof finds 1 lie in 1,000 txs in 10 steps, and a safe vs naive token bridge (replay & duplicate-signer attacks) | 🔨 |
+| 12 | 26 Oct | [Oracles, Layer 2 & bridges](day-12) | A price reader that refuses 6 kinds of bad price (stale, zero, glitch, L2 down), a simulated optimistic rollup whose fraud proof finds 1 lie in 1,000 txs in 10 steps, and a safe vs naive token bridge (replay & duplicate-signer attacks) | ✅ |
 | 13 | 27 Oct | Full-stack dApp | Frontend + MetaMask + Sepolia deployment | ⏳ |
 | 14 | 28 Oct | Zero-knowledge & account abstraction | ZK proof basics (circom), ERC-4337 smart wallets | ⏳ |
 | **Phase 4 — Capstone** | | | | |

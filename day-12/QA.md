@@ -111,3 +111,31 @@
 
   47 passing (7s)
 ```
+
+---
+
+## Evening audit
+
+**Method:** independent second pass, as an outside auditor who did not write the code. Re-ran everything from a clean install, then attacked the edges: signature encodings (64-byte vs 65-byte), price-band and grace-period boundaries, challenge-window boundary, Merkle odd-leaf duplication (the Bitcoin CVE-2012-2459 trick) and the sequencer's bond input. Tools: ESLint, Solhint, `npm audit --omit=dev`, Slither (102 detectors, the same 9 informational results as the morning, nothing new; filtering out `node_modules` leaves 0 high / medium).
+**Rounds:** 2 (round 1: 6 probe tests, 3 failed: 1 real bug, 2 mistakes in my own probes · round 2: all green).
+
+| ID | Severity | How found | Description | Fix | Proving test |
+|----|----------|-----------|-------------|-----|--------------|
+| E1 | Low | Input-validation attack on the rollup simulation | `RollupL1.depositBond(seq, amount)` accepted **any** value: `-5` (silently *reduced* a bond), `NaN`, `1.5`, and even the string `"5"` (JavaScript turned `0 + "5"` into the text `"05"`, which still passed the `> 0` check). A negative or text bond would make slashing and rewards compute nonsense. | Bond must be a positive safe integer and the running total must stay exact; otherwise `BadBond`. | `E1: a sequencer bond must be a positive whole number…` (fails before the fix) |
+| E2 | Info | Probe: same validator in two signature encodings | Can one validator be counted twice by sending the same signature as 65 bytes and as 64-byte EIP-2098 "compact" bytes? | No. OpenZeppelin's `recover(bytes)` only accepts the 65-byte form (the 64-byte one reverts `ECDSAInvalidSignatureLength`), and a repeated signer is refused anyway. (My first version of this probe expected the wrong error name; the probe was wrong, the contract was right.) | `E2` |
+| E3 | Info | Probe: exact band edges | Are `minAnswer` and `maxAnswer` themselves accepted, and one unit outside refused? | Yes. | `E3` |
+| E4 | Info | Probe: grace-period edge | Is a price accepted while the sequencer restarted less than `gracePeriod` seconds ago? | Refused until the period has passed. (My first probe let the price go stale and tested the wrong rule; fixed the probe.) | `E4` |
+| E5 | Info | Probe: Merkle odd-leaf duplication | Do `[1,2,3]` and `[1,2,3,3]` share a state root (the trick that fooled Bitcoin's Merkle tree)? | No: each leaf includes its **index**, so a duplicated last leaf is a different leaf. | `E5` |
+| E6 | Info | Probe: challenge-window edge | Can a fraud proof land exactly when the window closes? | No: `now >= postedAt + window` is refused, one second earlier is accepted. | `E6` |
+
+### Final green output (evening)
+
+| Tool | Result |
+|---|---|
+| `npm test` | **56 / 56 pass** (47 morning + 6 evening-audit + 3 exercises) |
+| `npm run ex` (exercises) | 3 / 3 pass, including a 25-run differential fuzz of a JavaScript price model against the real Solidity contract |
+| ESLint + Solhint | 0 errors, 0 warnings |
+| `npm audit --omit=dev` | 0 vulnerabilities |
+| Slither (102 detectors) | 9 results, all informational and explained above (I2–I5); 0 high / medium |
+
+No new Known issues. K1–K6 above still apply.
