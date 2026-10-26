@@ -1,0 +1,43 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+
+
+
+*{box-sizing:border-box;margin:0;padding:0}body{width:1080px;height:1350px;font-family:Inter,Arial,sans-serif;color:#fff;background:#0B1F3A;background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);background-size:54px 54px;padding:72px;display:flex;flex-direction:column}.top{display:flex;align-items:center;gap:20px}.pill{background:#2563EB;padding:10px 22px;border-radius:999px;font-weight:700;font-size:26px;letter-spacing:1px}.tag{color:#94A3B8;font-size:26px;font-weight:500}h1{font-size:76px;line-height:1.08;font-weight:800;margin-top:52px;letter-spacing:-1.5px}h1 em{font-style:normal;color:#22D3EE}.viz{margin-top:48px;background:#0F172A;border:1px solid #1E3A5F;border-radius:24px;padding:34px 40px}.flow{display:flex;align-items:center;gap:22px}.box{flex:1;border:2px solid #22D3EE;border-radius:18px;padding:18px 12px;text-align:center}.box b{display:block;font-size:30px;color:#22D3EE}.box span{font-size:22px;color:#94A3B8}.arrow{font-size:38px;color:#64748B}.rows{border-top:1px solid #1E3A5F;margin-top:28px;padding-top:20px}.row{display:flex;justify-content:space-between;font-family:"DejaVu Sans Mono",monospace;font-size:25px;color:#CBD5E1;margin-bottom:14px}.ok{color:#34D399}.bad{color:#F87171}.warn{color:#FBBF24}.stats{display:flex;gap:16px;margin-top:28px}.stats div{flex:1;background:#0F172A;border:1px solid #1E3A5F;border-radius:18px;padding:18px 20px}.stats b{display:block;font-size:46px;font-weight:800;color:#22D3EE}.stats span{font-size:21px;color:#94A3B8}ul{list-style:none;margin-top:46px}li{font-size:31px;color:#CBD5E1;margin-bottom:20px}li:before{content:"→ ";color:#22D3EE;font-weight:700}.foot{margin-top:auto}.bar{display:flex;gap:8px;margin-bottom:22px}.bar i{flex:1;height:10px;border-radius:5px;background:#1E3A5F}.bar i.on{background:#22D3EE}.by{font-size:22px;color:#94A3B8;display:flex;justify-content:space-between}.by b{color:#fff}
+
+h1{margin-top:60px}.viz{margin-top:52px;padding:36px 44px}
+.lbl{font-size:22px;color:#94A3B8;letter-spacing:1px;text-transform:uppercase;font-weight:600}
+.tbl{width:100%;border-collapse:collapse;margin-top:14px}
+.tbl th{text-align:left;color:#94A3B8;font-weight:600;font-size:20px;letter-spacing:1px;text-transform:uppercase;padding:0 0 10px}
+.tbl td{padding:13px 0;border-top:1px solid #1E3A5F;font-size:27px;color:#E2E8F0}
+.tbl td.m{font-family:"DejaVu Sans Mono",monospace;font-size:24px}
+.tbl th:nth-child(2),.tbl th:nth-child(3),.tbl td:nth-child(2),.tbl td:nth-child(3){text-align:right}
+.stats{display:flex;gap:16px;margin-top:30px}
+.stats div{flex:1;background:#0B1F3A;border:1px solid #1E3A5F;border-radius:18px;padding:16px 18px}
+.stats b{display:block;font-size:42px;font-weight:800;color:#22D3EE}
+.stats span{font-size:20px;line-height:1.3;color:#94A3B8;display:block}
+
+.tbl td.ok{color:#34D399}.tbl td.bad{color:#F87171}.tbl{margin-top:20px}
+ul{margin-top:44px;margin-bottom:28px}li{font-size:30px}
+</style>
+</head><body>
+<div class="top"><span class="pill">DAY 12 / 15</span><span class="tag">#LearningBlockchain · Oracles, L2 &amp; bridges</span></div>
+<h1>Wrong price?<br><em>Better&nbsp;no&nbsp;price.</em></h1>
+<div class="viz">
+<div class="lbl">What is 1 ETH worth? (my test run)</div>
+<table class="tbl">
+<tr><th>Feed says</th><th>Naive reader</th><th>Safe reader</th></tr>
+<tr><td>$2,000, fresh</td><td class="m ok">$2,000</td><td class="m ok">$2,000</td></tr>
+<tr><td>2 hours old</td><td class="m bad">$2,000</td><td class="m ok">refused</td></tr>
+<tr><td>$0</td><td class="m bad">$0</td><td class="m ok">refused</td></tr>
+<tr><td>$1,000,000 glitch</td><td class="m bad">$1,000,000</td><td class="m ok">refused</td></tr>
+<tr><td>Layer&nbsp;2 is down</td><td class="m bad">$1,800</td><td class="m ok">refused</td></tr>
+</table>
+<div class="stats">
+<div><b>17.8×</b><span>cheaper per transfer when 1,000 ride in one rollup batch</span></div>
+<div><b>10 steps</b><span>to find 1 lie hidden in 1,000 transactions</span></div>
+</div>
+</div>
+<ul><li>Oracles bring outside prices onto the chain</li><li>Rollups share one Ethereum fee across many</li><li>Bridges: never accept a signature twice</li></ul>
+<div class="foot"><div class="bar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div><div class="by"><b>Manish Khadka</b><span>github.com/Khadka1996/Learning-Blockchain</span></div></div>
+</body></html>
