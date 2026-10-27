@@ -97,7 +97,7 @@ Solidity compiles **offline** with solcjs (see [`tools/README.md`](../tools/READ
 cd day-13
 npm install
 npm start               # scripted tour on an in-memory chain: deploy, 3 tips, 5 mistakes, withdraw
-npm test                # 39 tests: contract, fuzz, deploy/env/server, 11 browser E2E tests
+npm test                # 45 tests: contract, fuzz, deploy/env/server, 11 browser E2E tests
 npm run lint            # ESLint (bans innerHTML in the frontend) + Solhint
 npm run slither         # static analysis (after npm run compile)
 ```
@@ -177,7 +177,7 @@ wrote   : frontend/config.js
 Sepolia is not configured: SEPOLIA_RPC_URL is missing; DEPLOYER_PRIVATE_KEY is missing. See .env.example.
 ```
 
-`npm test`: **39 passing** (~7 s). The browser part:
+`npm test`: **45 passing** (~9 s, including the evening audit and exercises). The browser part:
 
 ```
   E2E — real frontend in Chromium + Hardhat chain
@@ -215,6 +215,24 @@ QA: 4 Low findings, all fixed with a proving test (a leaked polling timer, a con
 - [Hardhat docs: Deploying and network configuration](https://hardhat.org/hardhat-runner/docs/guides/deploying)
 - [ethereum.org: Networks (Sepolia, faucets)](https://ethereum.org/en/developers/docs/networks/)
 - [OWASP: Cross-site scripting prevention cheat sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
+## Evening update
+
+A second, independent review looked hardest at the code that guards the deploy key, because a mistake there costs real money. It found **three Low problems**, each proven by a failing test first:
+
+- **E1 — only one of Hardhat's 20 public keys was blocked.** The check refused account #0's key, but accounts #1–#19 come from the same public phrase. Pasting the key of account #1 was accepted as fine. Now all 20 are refused.
+- **E2 — an all-zero key passed.** It has the right length, but it is not a valid private key. Now refused.
+- **E3 — `https://` with no host name passed** as a valid RPC URL. The URL is now parsed properly.
+
+The contract itself was attacked again (re-entrancy, huge page requests, emoji at the byte limit, 120 tips in pages) and held. Nothing changed there.
+
+**One improvement to the morning code:** `npm run check:env` checks your `.env` for Sepolia **without deploying and without ever printing the key**, so you find a mistake before spending any gas.
+
+Exercises (3, with tested solutions): [`exercises/`](exercises). Full findings: [QA.md](QA.md#evening-audit). Study guide: [`notes.pdf`](notes.pdf).
+
+### What I'd explore next
+- Replace the 8-second polling with event subscriptions, and add a "Load more" button that uses `getTips(offset, 50)`.
+- Make the owner transferable in two steps (`Ownable2Step`) so a lost key does not lock the tips forever (known issue K1).
 
 ## Coming next
 

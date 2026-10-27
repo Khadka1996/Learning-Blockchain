@@ -2,7 +2,7 @@
   "name": "day-13-full-stack-dapp",
   "version": "1.0.0",
   "private": true,
-  "description": "Day 13 of Learning Blockchain — a full-stack dApp: TipJar contract, static HTML/JS frontend with ethers.js + MetaMask, deploy script for a local Hardhat node or the Sepolia testnet, and a browser end-to-end test",
+  "description": "Day 13 of Learning Blockchain \u2014 a full-stack dApp: TipJar contract, static HTML/JS frontend with ethers.js + MetaMask, deploy script for a local Hardhat node or the Sepolia testnet, and a browser end-to-end test",
   "scripts": {
     "start": "hardhat run src/demo.js",
     "node": "hardhat node",
@@ -15,7 +15,12 @@
     "lint": "eslint . && solhint \"contracts/**/*.sol\"",
     "lint:sol": "solhint \"contracts/**/*.sol\"",
     "slither": "slither . --hardhat-ignore-compile",
-    "clean": "hardhat clean"
+    "clean": "hardhat clean",
+    "ex": "hardhat test test/06-exercises.test.js",
+    "ex1": "node exercises/solutions/ex1-bytes.js",
+    "ex2": "hardhat run exercises/solutions/ex2-fetch-all.js",
+    "ex3": "hardhat run exercises/solutions/ex3-leaderboard.js",
+    "check:env": "node scripts/check-env.js"
   },
   "author": "Manish Khadka",
   "license": "MIT",

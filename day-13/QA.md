@@ -66,3 +66,42 @@ found 0 vulnerabilities
 $ slither . --hardhat-ignore-compile
 INFO:Slither:. analyzed (3 contracts with 102 detectors), 6 result(s) found
 ```
+
+
+---
+
+## Evening audit
+
+**Who:** a second, independent pass as an outside auditor who did not write the code. **Method:** re-ran everything from a clean build, then attacked the parts the morning review covered least: the secret-handling code (`scripts/env.js`), which guards the one thing that costs real money if it goes wrong. Each idea became a test that was run **before** fixing.
+**Rounds:** 2 (round 1: 3 failing tests written, 3 fixes · round 2: full re-run on clean build).
+
+| ID | Severity | How found | Description | Fix | Proving test |
+|----|----------|-----------|-------------|-----|--------------|
+| E1 | Low | Manual pentest (secret handling) | **Only Hardhat account #0's key was blocked.** `checkSepoliaEnv` refused one public test key, but the 19 other accounts that `npx hardhat node` prints come from the same public phrase, so their keys are known to everyone too. Pasting account #1's key was accepted as "valid". Bots sweep these keys on every real network within seconds. | All 20 keys are derived from the public phrase and refused, in any form (`0x`, no prefix, upper case). | `E1: ALL 20 well-known Hardhat test keys are refused…` (failed before the fix: `HARDHAT_PUBLIC_KEYS` did not exist) |
+| E2 | Low | Boundary values on the key | **An all-zero key passed the check** (`0x00…00` is 64 hex characters, so the format check was happy), although it is not a valid private key (the allowed range is 1 up to just below the curve order). The deploy would fail late with an unclear error. | Reject 0 and anything ≥ the secp256k1 order. An upper-case `0X` prefix is now normalised. | `E2: a private key with an upper-case 0X prefix…` (failed before: zero key accepted) |
+| E3 | Low | Malformed data (URL) | **`https://` with no host name passed** the "starts with https://" check. | The URL is parsed with `new URL()`; it must be `https:` and have a host name. | `E3: RPC URLs with a placeholder, whitespace or a non-https scheme are refused` (failed before on `https://`) |
+| E4 | Info | Probe: contract re-run (reentrancy, overflow, DoS) | Re-attacked `TipJar`: owner contract re-entering `withdraw`, `getTips(MaxUint256, MaxUint256)`, 120 tips read in pages, 140/144-byte emoji boundary, 10,000 random strings against a model. | Nothing found. The contract is unchanged. | morning tests `P4`, `P5` + exercise tests ex1/ex2 (fuzz of the byte rule against the real contract) |
+| E5 | Info | Probe: path traversal / framing | Re-ran traversal, null byte, double-encoded dots and framing headers against `src/serve.js`. | Nothing found. | morning `P2`, `L4` |
+
+New helper from the evening work: `npm run check:env` validates `.env` **without deploying and without printing the key**.
+
+### Known issues
+No new ones. K1–K6 above still apply. E1 reduces, but cannot remove, the risk of using a leaked key: the check only knows keys that are public by design.
+
+### Final green output (evening, after `npx hardhat clean && npx hardhat compile`)
+
+| Tool | Result |
+|---|---|
+| `npm test` | **45 / 45 pass** (39 morning + 3 evening-audit + 3 exercises) |
+| `npm run ex` (exercises) | 3 / 3 pass |
+| ESLint + Solhint | 0 problems |
+| `npm audit --omit=dev` | found 0 vulnerabilities |
+| Slither (102 detectors) | 6 results, all Info (S1–S4 above); 0 high / medium |
+
+```
+$ npm test
+  Evening audit (see QA.md)                     3 passing
+  Evening exercises (solutions)                 3 passing
+  (+ 39 morning tests)
+  45 passing (9s)
+```
