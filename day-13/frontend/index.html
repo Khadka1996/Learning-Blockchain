@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Content Security Policy: only our own scripts may run. Even if a tip message
+       somehow reached the page as HTML, an injected <script> or onerror= would be blocked.
+       connect-src 'self': the page itself talks to no server; the wallet does. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <title>TipJar — Day 13 dApp</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div>
+        <p class="eyebrow">Day 13 · Learning Blockchain</p>
+        <h1>TipJar</h1>
+        <p class="sub">Leave a small tip and a public message. Stored on the blockchain, forever.</p>
+      </div>
+      <div class="wallet">
+        <button id="connect" type="button">Connect wallet</button>
+        <p id="account" class="muted"></p>
+        <p id="network" class="muted"></p>
+      </div>
+    </header>
+
+    <p id="status" class="status" role="status" aria-live="polite" data-kind="info">Connect your wallet (MetaMask) to start.</p>
+    <button id="switch" type="button" class="secondary" hidden>Switch network</button>
+
+    <section class="stats" aria-label="Jar stats">
+      <div><span class="label">Tips</span><span id="count" class="value">–</span></div>
+      <div><span class="label">In the jar</span><span id="balance" class="value">–</span></div>
+      <div><span class="label">Total ever tipped</span><span id="total" class="value">–</span></div>
+    </section>
+
+    <form id="tip-form" class="card" autocomplete="off">
+      <h2>Send a tip</h2>
+      <label for="amount">Amount (ETH)</label>
+      <input id="amount" name="amount" inputmode="decimal" value="0.001" required>
+      <label for="message">Message <span id="bytes" class="muted">0 / 140 bytes</span></label>
+      <textarea id="message" name="message" rows="3" maxlength="140" placeholder="Thanks for the notes!" required></textarea>
+      <button id="send" type="submit" disabled>Send tip</button>
+    </form>
+
+    <section class="card" id="owner-box" hidden>
+      <h2>Owner</h2>
+      <p class="muted">You deployed this jar, so you can withdraw everything in it.</p>
+      <button id="withdraw" type="button">Withdraw to my wallet</button>
+    </section>
+
+    <section class="card">
+      <h2>Latest tips</h2>
+      <ol id="tips" class="tips"></ol>
+      <p id="empty" class="muted">No tips yet.</p>
+    </section>
+
+    <footer class="muted">Contract <span id="contract">–</span> · code on
+      <a href="https://github.com/Khadka1996/Learning-Blockchain/tree/main/day-13" rel="noopener noreferrer" target="_blank">GitHub</a></footer>
+  </main>
+
+  <script src="vendor/ethers.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
