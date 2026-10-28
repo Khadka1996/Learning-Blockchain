@@ -12,7 +12,11 @@
     "lint": "eslint . && solhint \"contracts/*.sol\"",
     "lint:sol": "solhint \"contracts/*.sol\"",
     "slither": "slither . --hardhat-ignore-compile --filter-paths \"node_modules|contracts/verifiers\"",
-    "clean": "hardhat clean"
+    "clean": "hardhat clean",
+    "ex": "hardhat test test/07-exercises.test.js",
+    "ex1": "node exercises/solutions/ex1-crack-pin.js",
+    "ex2": "node exercises/solutions/ex2-window.js",
+    "ex3": "node exercises/solutions/ex3-rolling-limit.js"
   },
   "author": "Manish Khadka",
   "license": "MIT",

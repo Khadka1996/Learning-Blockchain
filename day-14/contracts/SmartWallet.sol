@@ -56,6 +56,8 @@ contract SmartWallet is BaseAccount {
     error OnlyLowering(uint256 current, uint256 wanted);
     error GasCostTooHigh(uint256 maxCost, uint256 cap);
     error ForbiddenTarget(address target);
+    error OwnerIsGuardian();
+    error AlreadyOwner();
 
     modifier onlyEntryPointOrOwner() {
         if (msg.sender != address(_entryPoint) && msg.sender != owner) revert NotAuthorized(msg.sender);
@@ -64,6 +66,9 @@ contract SmartWallet is BaseAccount {
 
     constructor(IEntryPoint entryPoint_, address owner_, address guardian_, uint256 dailyLimit_) {
         if (address(entryPoint_) == address(0) || owner_ == address(0) || guardian_ == address(0)) revert ZeroAddress();
+        // Evening audit L1: the guardian is the only one who may RAISE the limit. If it were also the
+        // owner, a thief with the owner key would have the guardian's power too.
+        if (owner_ == guardian_) revert OwnerIsGuardian();
         _entryPoint = entryPoint_;
         owner = owner_;
         guardian = guardian_;
@@ -113,6 +118,8 @@ contract SmartWallet is BaseAccount {
     function startRecovery(address newOwner) external {
         if (msg.sender != guardian) revert NotAuthorized(msg.sender);
         if (newOwner == address(0)) revert ZeroAddress();
+        if (newOwner == guardian) revert OwnerIsGuardian(); // L1: guardian must never become the owner
+        if (newOwner == owner) revert AlreadyOwner();
         pendingOwner = newOwner;
         recoveryReadyAt = block.timestamp + RECOVERY_DELAY;
         emit RecoveryStarted(newOwner, recoveryReadyAt);

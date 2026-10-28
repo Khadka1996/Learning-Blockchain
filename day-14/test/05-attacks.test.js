@@ -113,10 +113,10 @@ describe("QA — attacks on ZkPrize", function () {
 
 describe("QA — known issues (documented behaviour, see QA.md)", function () {
   it("K3: a thief holding the owner key can cancel the guardian's recovery (the daily limit still caps the loss)", async function () {
-    const [, owner, guardian] = await ethers.getSigners();
+    const [, owner, guardian, friend] = await ethers.getSigners();
     const entryPoint = await ethers.deployContract("EntryPoint");
     const wallet = await ethers.deployContract("SmartWallet", [entryPoint, owner, guardian, E("1")]);
-    await wallet.connect(guardian).startRecovery(guardian);
+    await wallet.connect(guardian).startRecovery(friend);
     await expect(wallet.connect(owner).cancelRecovery()).to.emit(wallet, "RecoveryCancelled"); // "owner" = whoever has the key
   });
 });

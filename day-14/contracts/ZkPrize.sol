@@ -32,6 +32,7 @@ contract ZkPrize {
     error AlreadyClaimed();
     error InvalidProof();
     error ZeroRecipient();
+    error RecipientIsPrize();
     error TransferFailed();
 
     constructor(ISecretVerifier verifier_, uint256 secretHash_) payable {
@@ -49,6 +50,8 @@ contract ZkPrize {
     ) external {
         if (claimed) revert AlreadyClaimed();
         if (recipient == address(0)) revert ZeroRecipient();
+        // Evening audit L2: paying the contract itself would lock the ETH forever (it has no withdraw).
+        if (recipient == address(this)) revert RecipientIsPrize();
         uint256[2] memory pub = [secretHash, uint256(uint160(address(recipient)))];
         if (!verifier.verifyProof(a, b, c, pub)) revert InvalidProof();
 

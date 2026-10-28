@@ -65,3 +65,47 @@ found 0 vulnerabilities
 $ slither . --hardhat-ignore-compile --filter-paths "node_modules|contracts/verifiers"
 INFO:Slither:. analyzed (30 contracts with 102 detectors), 9 result(s) found
 ```
+
+---
+
+## Evening audit
+
+**Reviewer stance:** an outside auditor who did not write the code, starting from the morning findings. Questions asked: *who must be different people for the rules to mean anything?* and *what can a user do to hurt themselves that the contract could simply refuse?* Two rounds: round 1 wrote the attacks as tests (3 failed as expected for L1, 1 for L2, K7 passed because it is documented behaviour); round 2 re-ran everything after the fixes and `hardhat clean`.
+
+| ID | Severity | How found | Description | Fix | Proving test |
+|----|----------|-----------|-------------|-----|--------------|
+| L1 | Low | Manual review (separation of duties) | **Owner and guardian could be the same address**, in the constructor and through `startRecovery(guardian)`. The guardian is the only one who may *raise* the daily limit. If it is also the owner, a thief with that one key can raise the limit and empty the wallet, and the "owner can only lower" rule means nothing. Recovering to the current owner was also accepted (pointless, and it makes the owner's recovery alerts noisy). | Constructor refuses `owner == guardian` (`OwnerIsGuardian`). `startRecovery` refuses `newOwner == guardian` (`OwnerIsGuardian`) and `newOwner == owner` (`AlreadyOwner`). | `L1a`, `L1b`, `L1c` in `06-evening-audit` |
+| L2 | Low | Manual review (self-harm input) | **A proof naming the prize contract itself as recipient** is valid, pays `address(this)` and sets `claimed = true`. The ETH is then locked forever (no withdraw). Only the prover can do this to himself, a relayer cannot change the recipient. | `claim` refuses `recipient == address(this)` (`RecipientIsPrize`). | `L2` in `06-evening-audit` |
+| K7 | Known issue (Medium-ish design limit) | Manual review (boundary values) | **"1 ETH per day" is per UTC calendar day.** 1 ETH sent at 23:59:30 and 1 ETH at 00:00:05 both pass: 2 ETH in 35 seconds. | Not fixed. A rolling 24 h window needs a ring of hourly buckets (bounded gas) or a similar structure. That is a design change, so it is left for later and proven by exercise 3 (a tested JavaScript model). The guardian (K3) and a lower limit remain the defence. | `K7` in `06-evening-audit`, exercises 2 and 3 |
+
+Other attacks tried this evening that **held** (no finding): `setDailyLimit(0)` by a thief (locks funds only until the guardian raises it, no loss); `execute(wallet, …)` into the wallet's own functions (only lowering works); `finishRecovery` called by a stranger (allowed by design, it only finishes what the guardian started); restarting a recovery repeatedly (guardian only); reentrancy through a recipient contract (`claimed` is set before the call).
+
+### Final results (after `npx hardhat clean && npx hardhat compile`)
+
+| Tool | Result |
+|---|---|
+| `npm test` | **52 / 52 pass** (~5 s): 43 contract tests (38 from the morning + 5 new audit tests) and 9 exercise tests |
+| `npx eslint .` | clean |
+| `npx solhint 'contracts/*.sol'` | clean (0 warnings) |
+| `npm audit --omit=dev` | found 0 vulnerabilities |
+| `slither . --hardhat-ignore-compile --filter-paths "node_modules|contracts/verifiers"` | 30 contracts, 102 detectors, **9 results, all Info** (the same families as S3 to S5). No high or medium. |
+
+```
+$ npm test
+  Zero-knowledge proof (circom + snarkjs Groth16) — off-chain
+  ZkPrize — on-chain verification
+  Front-running a ZK proof
+  SmartWallet — ERC-4337 user operations
+  SmartWallet — daily spending limit
+  SmartWallet — guardian recovery
+  Fuzz — SmartWallet daily limit
+  QA — attacks on the daily limit (thief holds the owner key)
+  QA — attacks on ZkPrize
+  QA — known issues (documented behaviour, see QA.md)
+  Evening audit — SmartWallet
+  Evening audit — ZkPrize
+  Exercise 1 — cracking a weak lock
+  Exercise 2 — sliding window
+  Exercise 3 — RollingLimit
+  52 passing (5s)
+```

@@ -121,7 +121,7 @@ Solidity compiles **offline** with solcjs (see [`tools/README.md`](../tools/READ
 cd day-14
 npm install
 npm start            # the tour: ZK prize (incl. a stolen proof) + smart wallet (limit, replay, recovery)
-npm test             # 38 tests: ZK, front-running race, ERC-4337 flows, fuzz, QA attacks
+npm test             # 52 tests: ZK, front-running race, ERC-4337 flows, fuzz, QA attacks, evening audit, exercises
 npm run lint         # ESLint + Solhint
 npm run slither      # static analysis (after npm run compile)
 npm run zk:setup     # OPTIONAL: recompile circuits, redo the trusted setup, regenerate verifiers
@@ -174,7 +174,7 @@ How to read Part 2. The wallet paid the gas, not Bob or the owner. The bundler e
 
 Circuit size (`npm run zk:setup`): `secret.circom` → **217 non-linear + 199 linear constraints**, 2 public inputs, 1 private input.
 
-`npm test`: **38 passing** (~5 s). QA: **1 Medium found and fixed (M1)**, 0 open high/medium, 6 known issues with reasons. Slither: 9 results, all Info. `npm audit --omit=dev`: 0 vulnerabilities. Full report: [QA.md](QA.md).
+`npm test`: **52 passing** (~5 s). QA: **1 Medium (M1) and 2 Low (L1, L2) found and fixed**, 0 open high/medium, 7 known issues with reasons. Slither: 9 results, all Info. `npm audit --omit=dev`: 0 vulnerabilities. Full report: [QA.md](QA.md).
 
 ## Key takeaways
 
@@ -193,6 +193,24 @@ Circuit size (`npm run zk:setup`): `secret.circom` → **217 non-linear + 199 li
 - [EIP-4337: Account Abstraction Using Alt Mempool](https://eips.ethereum.org/EIPS/eip-4337)
 - [ERC-7562: Account Abstraction Validation Scope Rules](https://eips.ethereum.org/EIPS/eip-7562)
 - [eth-infinitism/account-abstraction (official EntryPoint v0.7)](https://github.com/eth-infinitism/account-abstraction)
+
+## Evening update
+
+A second, independent review looked at who has to be a *different person* for the safety rules to mean anything, and at what a user could do to hurt themselves. Each finding was proven by a failing test first:
+
+- **L1 (Low): owner and guardian could be the same address.** The guardian is the only one allowed to *raise* the daily limit. If one key is both, a thief with that key raises the limit and empties the wallet. The constructor and `startRecovery` now refuse it (`OwnerIsGuardian`), and recovering to the current owner is refused too (`AlreadyOwner`).
+- **L2 (Low): a proof naming the prize contract as recipient locked the ETH forever.** `ZkPrize.claim` now refuses `recipient == address(this)`.
+- **K7 (known, not fixed): "per day" means per UTC calendar day.** I sent 1 ETH at 23:59:30 and 1 ETH at 00:00:05: both passed, so 2 ETH left in 35 seconds. The test documents it, and exercises 2 and 3 build the fix as a tested model (a rolling 24 h window).
+
+Result: `npm test` → **52 passing** (43 contract tests + 9 exercise tests), ESLint and Solhint clean, 0 audit vulnerabilities, Slither 9 results all Info. Details in [QA.md](QA.md#evening-audit).
+
+### Exercises
+Three exercises (easy, medium, challenge) with tested solutions: [`exercises/README.md`](exercises/README.md). Run `npm run ex`.
+
+### What I'd explore next
+- Build the rolling-window limit in Solidity with 24 hourly buckets, and fuzz it against the JavaScript model from exercise 3.
+- Let the guardian be changed (and use two or three guardians, M-of-N) with a delay, so one lost guardian key does not break recovery (known issue K2).
+- Add a paymaster and a wallet factory with `initCode`, so a new user can start with no ETH (known issue K5).
 
 ## Coming next
 
