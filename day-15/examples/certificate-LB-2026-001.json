@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "registry": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "chainId": 31337,
+  "issuer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+  "id": "LB-2026-001",
+  "recipient": "Manish Khadka",
+  "course": "Learning Blockchain in 15 Days",
+  "issuedOn": "2026-10-29",
+  "salt": "0x1cf62cb1db37480c2e3ca008467a6957"
+}

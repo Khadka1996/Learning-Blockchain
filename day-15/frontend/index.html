@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Only our own scripts may run. connect-src allows the local Hardhat node for
+       read-only checks without a wallet; the wallet does everything else. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:8545; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>CertCheck — Day 15 capstone dApp</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div>
+        <p class="eyebrow">Day 15 · Learning Blockchain · Capstone</p>
+        <h1>CertCheck</h1>
+        <p class="sub">Is this certificate real? Drop the file. The blockchain answers in a second, for free.</p>
+      </div>
+      <div class="wallet">
+        <button id="connect" type="button" class="secondary">Connect wallet (issuers)</button>
+        <p id="account" class="muted"></p>
+      </div>
+    </header>
+
+    <section class="card" aria-labelledby="verify-h">
+      <h2 id="verify-h">Verify a certificate</h2>
+      <label for="file">Certificate file (.json)</label>
+      <input id="file" type="file" accept=".json,application/json">
+      <label for="paste">…or paste its text</label>
+      <textarea id="paste" rows="5" spellcheck="false" placeholder='{"chainId":31337,"course":"…"}'></textarea>
+      <button id="verify" type="button">Verify</button>
+      <div id="result" class="result" role="status" aria-live="polite" hidden>
+        <p id="verdict" class="verdict"></p>
+        <p id="reason" class="muted"></p>
+        <dl id="details" class="details"></dl>
+      </div>
+    </section>
+
+    <section class="card" id="issuer-box" hidden aria-labelledby="issue-h">
+      <h2 id="issue-h">Issue a certificate</h2>
+      <p class="muted">Only the fingerprint goes on-chain. Send the downloaded file to the student.</p>
+      <form id="issue-form" autocomplete="off">
+        <label for="recipient">Student name</label><input id="recipient" maxlength="120" required>
+        <label for="course">Course</label><input id="course" maxlength="120" value="Learning Blockchain in 15 Days" required>
+        <label for="certid">Certificate ID</label><input id="certid" maxlength="120" required>
+        <label for="date">Date</label><input id="date" type="date" required>
+        <button id="issue" type="submit">Issue on-chain</button>
+      </form>
+      <a id="download" class="download" hidden>Download certificate file</a>
+      <h2 class="gap">Revoke</h2>
+      <p class="muted">Paste the certificate in the box above, then:</p>
+      <label for="reason-in">Reason (max 200 bytes)</label><input id="reason-in" maxlength="200">
+      <button id="revoke" type="button" class="danger">Revoke this certificate</button>
+    </section>
+
+    <p id="status" class="status" role="status" aria-live="polite" data-kind="info">Verifying needs no wallet and no fee.</p>
+    <footer class="muted">Code on <a href="https://github.com/Khadka1996/Learning-Blockchain/tree/main/day-15" rel="noopener noreferrer" target="_blank">GitHub</a></footer>
+  </main>
+  <script src="vendor/ethers.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script src="lib/certificate.js"></script>
+  <script src="lib/verify.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

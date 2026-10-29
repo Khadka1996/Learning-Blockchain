@@ -39,7 +39,7 @@ Each day has its own folder with notes, working code, tests, a QA & security rep
 | 13 | 27 Oct | [Full-stack dApp](day-13) | A TipJar dApp: contract + plain HTML/JS page with ethers.js + MetaMask, deploy script for a local chain or Sepolia (secrets in `.env`, never in git), 11 browser tests clicking the real page (XSS, wrong network, Cancel, account switches) | ✅ |
 | 14 | 28 Oct | [Zero-knowledge & account abstraction](day-14) | A circom + snarkjs proof of a secret checked on-chain (and a copied proof stolen from the mempool vs one bound to its recipient), plus an ERC-4337 smart wallet with a 1 ETH/day limit and guardian recovery; QA found and fixed a way past the limit through gas | ✅ |
 | **Phase 4 — Capstone** | | | | |
-| 15 | 29 Oct | Capstone + self-audit | On-chain certificate verification dApp + audit report + retrospective | ⏳ |
+| 15 | 29 Oct | [Capstone: certificate dApp + self-audit](day-15) | CertCheck: a registry where schools record certificate fingerprints (issuer roles, issue / batch / revoke, free verify), a web page that checks a file in ~2 ms with no wallet, 36 tests incl. browser E2E, and a professional self-audit that found and fixed 3 Medium + 1 Low | 🔨 |
 
 ---
 
