@@ -55,3 +55,31 @@ $ slither . --hardhat-ignore-compile --filter-paths "node_modules|contracts/v1"
   incorrect-equality ×2 (Slither rates the detector Medium) · timestamp ×1 (Low)
 → triaged as S2: false positives. 0 real high / medium findings left.
 ```
+
+
+---
+
+## Evening audit
+
+**Method:** an independent second pass as an outside auditor: clean build, all tools again, then a new attacker checklist on the roles, the file parser and the verifier (admin lock-out, role renounce, prototype-pollution keys, address spellings, chain-id edge cases, duplicate JSON keys, batch duplicates). **Rounds:** 2 (round 1 found L2 and wrote the failing test; round 2 re-ran everything on the fix).
+
+| ID | Severity | Found by | Description | Fix | Proving test |
+|----|----------|----------|-------------|-----|--------------|
+| L2 | Low | Manual review (access control) | The only holder of `DEFAULT_ADMIN_ROLE` could call `renounceRole` or `revokeRole` on itself. Result: no admin forever, so no new issuers, no removal of a stolen issuer, no emergency revoke (M3's safety net). A thief with the admin key could do it on purpose. | The contract counts admins (`adminCount`) and reverts `LastAdmin()` when the last one would leave. Hand-over: grant the new admin first, then the old one may leave. Issuer roles are unaffected. | `06-evening-audit`: `the only admin cannot renounce or revoke itself` (failed before the fix), `admin hand-over still works`, `issuers can still be removed or leave freely` |
+| E1 | Info | Manual pentest (parser) | Keys `__proto__` / `constructor`, duplicate JSON keys, `chainId` written as `31337.0` or `3.1337e4`, lower-case addresses. | All handled by the existing checks: unknown keys → `BAD_FILE`; duplicate keys keep the last value and are re-written canonically; equal numbers and addresses produce the same fingerprint. | existing `hostile certificate files…`, fuzz `key order…` |
+| E2 | Info | Manual pentest (batch) | The same hash twice in one `issueBatch`. | Whole batch reverts (`AlreadyIssued`); only the caller's own batch is affected, no one else's. | existing `issueBatch` tests |
+| E3 | Info | Manual review | The admin can revoke any certificate. | By design (emergency button for a stolen issuer key); every revoke emits an event with the revoker and the reason. | `M3 …` |
+
+### Known issues
+K1–K4 from the morning review stay. K1 is now smaller: the admin can no longer be lost by accident, but a single stolen admin key is still dangerous, so production needs a multisig.
+
+### Final green output
+
+```
+$ npx hardhat clean && npm test
+  46 passing (16s)     # 13 unit · 4 fuzz · 7 attacks · 8 e2e · 4 deploy · 3 evening audit · 7 exercises
+
+$ npm run lint           (ESLint + Solhint)   no problems
+$ npm audit --omit=dev   found 0 vulnerabilities
+$ slither . --filter-paths "node_modules|contracts/v1"   3 results (same triaged S2 false positives)
+```

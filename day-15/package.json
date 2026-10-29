@@ -2,7 +2,7 @@
   "name": "day-15-capstone-certificate-dapp",
   "version": "1.0.0",
   "private": true,
-  "description": "Day 15 of Learning Blockchain — capstone: on-chain certificate verification dApp (issuer role, issue/revoke, verify by hash, frontend) + professional self-audit report",
+  "description": "Day 15 of Learning Blockchain \u2014 capstone: on-chain certificate verification dApp (issuer role, issue/revoke, verify by hash, frontend) + professional self-audit report",
   "scripts": {
     "start": "hardhat run src/demo.js",
     "node": "hardhat node",
@@ -19,7 +19,12 @@
     "slither": "slither . --hardhat-ignore-compile",
     "clean": "hardhat clean",
     "check:env": "node scripts/check-env.js",
-    "build:web": "node scripts/build-web.js"
+    "build:web": "node scripts/build-web.js",
+    "ex": "hardhat test test/07-exercises.test.js",
+    "ex1": "node exercises/solutions/ex1-bits-changed.js",
+    "ex2": "node exercises/solutions/ex2-describe.js",
+    "ex3": "hardhat run exercises/solutions/ex3-check-many.js",
+    "audit:evening": "hardhat test test/06-evening-audit.test.js"
   },
   "author": "Manish Khadka",
   "license": "MIT",

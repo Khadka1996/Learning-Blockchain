@@ -39,7 +39,43 @@ Each day has its own folder with notes, working code, tests, a QA & security rep
 | 13 | 27 Oct | [Full-stack dApp](day-13) | A TipJar dApp: contract + plain HTML/JS page with ethers.js + MetaMask, deploy script for a local chain or Sepolia (secrets in `.env`, never in git), 11 browser tests clicking the real page (XSS, wrong network, Cancel, account switches) | ✅ |
 | 14 | 28 Oct | [Zero-knowledge & account abstraction](day-14) | A circom + snarkjs proof of a secret checked on-chain (and a copied proof stolen from the mempool vs one bound to its recipient), plus an ERC-4337 smart wallet with a 1 ETH/day limit and guardian recovery; QA found and fixed a way past the limit through gas | ✅ |
 | **Phase 4 — Capstone** | | | | |
-| 15 | 29 Oct | [Capstone: certificate dApp + self-audit](day-15) | CertCheck: a registry where schools record certificate fingerprints (issuer roles, issue / batch / revoke, free verify), a web page that checks a file in ~2 ms with no wallet, 36 tests incl. browser E2E, and a professional self-audit that found and fixed 3 Medium + 1 Low | 🔨 |
+| 15 | 29 Oct | [Capstone: certificate dApp + self-audit](day-15) | CertCheck: a registry where schools record certificate fingerprints (issuer roles, issue / batch / revoke, free verify), a web page that checks a file in ~2 ms with no wallet, 36 tests incl. browser E2E, and a professional self-audit that found and fixed 3 Medium + 1 Low (+ 1 Low in the evening review) | ✅ |
+
+---
+
+## Retrospective — 15 days of learning Blockchain
+
+**What I built.** From one hash on Day 1 to a working certificate-checking app on Day 15: a mineable chain, signed transactions, Merkle proofs, a mini-EVM, tested Solidity contracts (vault, ERC-20, NFTs, an AMM, upgradeable proxies, an oracle reader, a bridge), a full-stack dApp, a zero-knowledge proof, an ERC-4337 wallet and the CertCheck capstone. Every day has runnable code, tests, a QA/security review and a PDF study guide.
+
+**Every day, one link:**
+
+| Day | Topic |
+|----:|-------|
+| 01 | [Hashing & SHA-256](day-01) |
+| 02 | [Blocks, chains & Proof of Work](day-02) |
+| 03 | [Keys, signatures & transactions](day-03) |
+| 04 | [Merkle trees, forks & consensus](day-04) |
+| 05 | [Ethereum & the EVM](day-05) |
+| 06 | [Solidity fundamentals](day-06) |
+| 07 | [ERC-20 tokens](day-07) |
+| 08 | [NFTs: ERC-721 & ERC-1155](day-08) |
+| 09 | [Smart-contract security](day-09) |
+| 10 | [DeFi: AMM from scratch](day-10) |
+| 11 | [Gas optimisation & upgradeable contracts](day-11) |
+| 12 | [Oracles, Layer 2 & bridges](day-12) |
+| 13 | [Full-stack dApp](day-13) |
+| 14 | [Zero-knowledge & account abstraction](day-14) |
+| 15 | [Capstone: certificate dApp + self-audit](day-15) |
+
+**5 lessons learned**
+
+1. **A hash is a fingerprint, and that idea carries everything.** Blocks, Merkle trees, signatures, certificates and ZK locks all start from it (Days 1, 2, 4, 14, 15).
+2. **Blockchain code is hard to fix after launch, so test like an attacker before it ships.** Re-entrancy, front-running, bad oracles and bridge replays all appeared in my own code until a test caught them (Days 6, 9, 10, 12).
+3. **Everything public can be copied.** A transaction in the mempool, a proof, a hash of a guessable secret: design so that a copy cannot hurt you (Days 9, 14, 15).
+4. **Ask who is allowed to do what, and who can take it back.** Most bugs I found were about roles: a removed issuer who could still revoke, a guardian who was also the owner, a registry left with no admin (Days 9, 14, 15).
+5. **A passing test is only proof of what it checks.** Reviewing a second time, as a stranger, found a bug every single day. Write the failing test first, then the fix.
+
+**Next steps.** Deploy CertCheck to Sepolia with a multisig admin; read a real audit report end to end; learn Foundry for fuzzing and invariants; write a circom circuit that does something useful; get an independent human review before any real money or real certificates depend on it.
 
 ---
 

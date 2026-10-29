@@ -79,7 +79,7 @@ Why the salt? A hash hides data only if it can't be guessed. Without a salt, any
 | [`src/verify.js`](src/verify.js) | The full verifier check: file valid → right registry & chain → right issuer → status |
 | [`frontend/`](frontend) | CertCheck page: verify by file or paste (no wallet needed on the local chain); issuers connect MetaMask to issue, download the file, and revoke |
 | [`scripts/deploy.js`](scripts/deploy.js) | Deploy to a local node or Sepolia (`.env`, see [`.env.example`](.env.example)); writes `frontend/config.js` with public data only |
-| [`test/`](test) | 36 tests: unit, fuzz, attacks, browser E2E, deploy & secrets |
+| [`test/`](test) | 46 tests: unit, fuzz, attacks, browser E2E, deploy & secrets, evening audit, exercises |
 | [`QA.md`](QA.md) · [`AUDIT.md`](AUDIT.md) | Findings table · professional self-audit report |
 
 ### The bugs my own review found
@@ -97,7 +97,7 @@ Why the salt? A hash hides data only if it can't be guessed. Without a salt, any
 cd day-15
 npm install
 npm start            # the whole story on a local chain, with gas numbers
-npm test             # 36 tests (Playwright + Chromium needed for the 8 browser tests)
+npm test             # 46 tests (Playwright + Chromium needed for the 8 browser tests)
 npm run fuzz         # property tests only
 npm run attacks      # the QA findings, reproduced
 npm run lint         # ESLint + Solhint
@@ -120,9 +120,9 @@ npm run check:env && npm run deploy:sepolia
 certificate file (canonical text):{"chainId":31337,"course":"Learning Blockchain in 15 Days","id":"LB-20…
 fingerprint stored on-chain:      0x1805c7d91877fd10ad403dd54683178c18e772591df82a291b9b3ec763351e08
 bytes of personal data on-chain:  0 (only the 32-byte fingerprint)
-gas: deploy registry              677,764
+gas: deploy registry              755,992
 gas: issue 1 certificate          70,391
-gas: issue a class of 30 (batch)  766,497 (25,549 each)
+gas: issue a class of 30 (batch)  766,567 (25,552 each)
 certificates issued:              31
 
 == 2. An employer checks the file Manish sent ==
@@ -134,7 +134,7 @@ fingerprint now:                  0xe3ede736ea4d811fdffa44187e38dda7619f121c546a
 
 == 4. The school cancels a certificate ==
 verdict:                          REVOKED — the issuer cancelled this certificate
-gas: revoke                       56,065
+gas: revoke                       56,087
 
 == 5. Someone who is not an issuer tries to issue ==
 result:                           rejected — AccessControlUnauthorizedAccount
@@ -153,13 +153,34 @@ Tests (`npm test`, after `hardhat clean`):
   Attacks (M1, M2, M3, privacy, DoS, files)  7 passing
   E2E — real page in Chromium                8 passing
   Deploy script & secrets                    4 passing
-  36 passing (11s)
+  Evening audit (L2)                         3 passing
+  Exercises                                  7 passing
+  46 passing (16s)
 ```
 
 | Screen | |
 |---|---|
 | Fake (one word changed) | ![](screenshots/verify-fake.png) |
 | Issuer view | ![](screenshots/issuer.png) |
+
+## Evening update
+
+I read the contract again as a stranger who did not write it, and ran every tool again (ESLint, Solhint, `npm audit`, Slither, all tests on a clean build).
+
+- **L2 (Low): the registry could be left with no admin, forever.** The only admin could call `renounceRole` (or `revokeRole` on itself) by mistake, or a thief with the key could do it on purpose. After that nobody could add or remove issuers, and nobody could cancel the certificates of a stolen issuer key (the M3 emergency button would be gone). A new test showed the lock-out; the contract now counts admins (`adminCount`) and refuses to remove the last one (`LastAdmin`). Handing over still works: add the new admin first, then the old one leaves.
+- Everything else I tried held: hostile files, look-alike registries, replaying a revoked certificate, huge batches, XSS, a leaked key in git. Details in [QA.md](QA.md#evening-audit).
+
+Result: `npm test` → **46 passing** (36 morning + 3 audit + 7 exercises), lint clean, 0 audit vulnerabilities, Slither 3 results (the same triaged false positives).
+
+Cost of the fix: deploying the registry now costs 755,992 gas instead of 677,764 (+78,228, once); issuing one certificate is unchanged (70,391).
+
+### Exercises
+Three exercises (easy, medium, challenge) with tested solutions: [`exercises/README.md`](exercises/README.md). Run `npm run ex`.
+
+### What I'd explore next
+- Make the admin a multisig (Safe) and switch to OpenZeppelin `AccessControlDefaultAdminRules` (two-step, delayed admin hand-over).
+- Show vetted school names next to issuer addresses (exercise 2 is the first step).
+- Deploy to Sepolia and let a friend verify a certificate from their phone.
 
 ## Key takeaways
 
@@ -181,4 +202,4 @@ Tests (`npm test`, after `hardhat clean`):
 
 ## Coming next
 
-Tonight: the evening review of the capstone, and a look back at all 15 days — what I understood, what surprised me, and what I'd learn next.
+That was the last day of the series. The look back at all 15 days is in the [root README](../README.md#retrospective--15-days-of-learning-blockchain).

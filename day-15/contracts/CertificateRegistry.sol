@@ -43,6 +43,8 @@ contract CertificateRegistry is AccessControl {
     mapping(address issuer => mapping(bytes32 certHash => Record)) private _records;
     uint256 public issuedCount;
     uint256 public revokedCount;
+    /// @notice How many accounts hold DEFAULT_ADMIN_ROLE. The last one can never leave (QA finding L2).
+    uint256 public adminCount;
 
     event CertificateIssued(address indexed issuer, bytes32 indexed certHash);
     event CertificateRevoked(address indexed issuer, bytes32 indexed certHash, address indexed revokedBy, string reason);
@@ -55,10 +57,26 @@ contract CertificateRegistry is AccessControl {
     error NotAllowedToRevoke(address caller);
     error BadBatchSize(uint256 size);
     error ReasonTooLong(uint256 length);
+    error LastAdmin();
 
     constructor(address admin) {
         if (admin == address(0)) revert ZeroAddress();
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
+    }
+
+    // ------------------------------------------------------------ admin safety
+
+    /// @dev Count admins so the registry can never be left with none (QA finding L2): with
+    ///      no admin nobody could add or remove issuers or revoke a stolen issuer's certificates.
+    function _grantRole(bytes32 role, address account) internal override returns (bool granted) {
+        granted = super._grantRole(role, account);
+        if (granted && role == DEFAULT_ADMIN_ROLE) ++adminCount;
+    }
+
+    function _revokeRole(bytes32 role, address account) internal override returns (bool revoked) {
+        if (role == DEFAULT_ADMIN_ROLE && hasRole(role, account) && adminCount == 1) revert LastAdmin();
+        revoked = super._revokeRole(role, account);
+        if (revoked && role == DEFAULT_ADMIN_ROLE) --adminCount;
     }
 
     // ------------------------------------------------------------------ issue
