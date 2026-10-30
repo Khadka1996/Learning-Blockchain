@@ -1,0 +1,215 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Day 05 — Ethereum & the EVM</title>
+<link rel="stylesheet" href="style.css">
+<style>:root{--footer:"Learning Blockchain · Day 05 · Manish Khadka · ";}</style></head><body>
+
+<div class="hero">
+  <span class="badge">DAY 05 / 15 · PHASE 2 — ETHEREUM &amp; SOLIDITY</span>
+  <h1>Ethereum &amp; the EVM</h1>
+  <div class="meta">Monday 19 October 2026 · Manish Khadka · github.com/Khadka1996/Learning-Blockchain/tree/main/day-05</div>
+</div>
+
+<h2>Learning objectives</h2>
+<ol>
+  <li>Explain the two kinds of Ethereum account (EOA and contract) and what a nonce does.</li>
+  <li>Read EVM bytecode as a list of opcodes and trace what each one does to the stack.</li>
+  <li>Work out the gas of a transaction: the 21,000 base cost, cheap opcodes, expensive storage, cold vs warm access and refunds.</li>
+  <li>Find any Solidity variable in raw storage: packed slots, mappings at <code>keccak256(key, slot)</code>, arrays at <code>keccak256(slot) + i</code>.</li>
+  <li>Prove a model is right by testing it against the real thing (differential testing).</li>
+</ol>
+
+<h2>The concept, step by step</h2>
+
+<h3>Step 1 — From a coin ledger to a world computer</h3>
+<p>Days 01–04 built a ledger that only tracks <b>who owns how many coins</b>. Ethereum keeps that ledger and also <b>runs programs</b> on it. Every node runs the same small computer, the <b>EVM</b> (Ethereum Virtual Machine), on the same inputs, and every node must get exactly the same result. If one node got a different answer, the network would split.</p>
+
+<h3>Step 2 — Two kinds of account</h3>
+<table>
+  <tr><th></th><th>Externally owned account (EOA)</th><th>Contract account</th></tr>
+  <tr><td><b>Controlled by</b></td><td>A private key (a person or a bot, Day 03)</td><td>Its own code</td></tr>
+  <tr><td><b>Has code?</b></td><td>No</td><td>Yes, fixed once deployed</td></tr>
+  <tr><td><b>Has storage?</b></td><td>No</td><td>Yes, 2<sup>256</sup> slots of 32 bytes</td></tr>
+  <tr><td><b>Balance + nonce</b></td><td>Yes: nonce = transactions sent</td><td>Yes: nonce = contracts it created</td></tr>
+  <tr><td><b>Starts a transaction?</b></td><td>Yes</td><td>No, only reacts to calls</td></tr>
+</table>
+<p>The <b>nonce</b> is a counter. Each transaction must use the next number, so the same signed transaction can never be played twice. A contract's address is also worked out from its creator and nonce: <code>keccak256(rlp(sender, nonce))</code>. In my run the predicted and real address matched exactly.</p>
+
+<h3>Step 3 — The EVM is a calculator with a stack</h3>
+<p>Contract code is a list of one-byte instructions called <b>opcodes</b> (<code>0x01</code> = <code>ADD</code>, <code>0x55</code> = <code>SSTORE</code>). Each opcode takes numbers off the top of a stack of 256-bit numbers and puts its answer back on top. Here is "store 2 + 3 in slot 0":</p>
+<div class="fig">
+<svg viewBox="0 0 640 140" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Inter" font-size="11">
+  <g fill="#0B1F3A" font-weight="600" text-anchor="middle">
+    <text x="60" y="12">PUSH1 2</text><text x="185" y="12">PUSH1 3</text><text x="310" y="12">ADD</text><text x="435" y="12">PUSH1 0</text><text x="565" y="12">SSTORE</text>
+  </g>
+  <g fill="#5b6578" text-anchor="middle" font-size="9.5"><text x="60" y="26">gas 3</text><text x="185" y="26">gas 3</text><text x="310" y="26">gas 3</text><text x="435" y="26">gas 3</text><text x="565" y="26">gas 22,100</text></g>
+  <g stroke="#0B1F3A" stroke-width="1" fill="#f3f6fa">
+    <rect x="35" y="105" width="50" height="28" rx="3"/>
+    <rect x="160" y="77" width="50" height="28" rx="3" fill="#cff6fc"/><rect x="160" y="105" width="50" height="28" rx="3"/>
+    <rect x="285" y="105" width="50" height="28" rx="3" fill="#cff6fc"/>
+    <rect x="410" y="77" width="50" height="28" rx="3" fill="#cff6fc"/><rect x="410" y="105" width="50" height="28" rx="3"/>
+    <rect x="510" y="90" width="110" height="34" rx="4" fill="#0B1F3A"/>
+  </g>
+  <g text-anchor="middle" font-size="13" font-weight="700" fill="#0B1F3A">
+    <text x="60" y="124">2</text><text x="185" y="96">3</text><text x="185" y="124">2</text><text x="310" y="124">5</text><text x="435" y="96">0</text><text x="435" y="124">5</text>
+  </g>
+  <text x="565" y="111" text-anchor="middle" fill="#22D3EE" font-weight="700">storage[0] = 5</text>
+  <g fill="#5b6578" font-size="9"><text x="466" y="95">key</text><text x="466" y="123">value</text></g>
+  <g stroke="#22D3EE" stroke-width="2" fill="none"><path d="M95 119 H145"/><path d="M220 105 H270"/><path d="M345 119 H395"/><path d="M485 105 H500"/></g>
+</svg>
+<div class="cap">Figure 1 — The stack after each opcode. Top of the stack is highlighted. Total execution gas: 3+3+3+3+22,100.</div>
+</div>
+
+<h3>Step 4 — Gas: the price list that keeps the computer alive</h3>
+<p>Every opcode costs <b>gas</b>. You pay <code>gas used × gas price</code>. Gas does two jobs: endless loops stop because they run out of gas, and spam costs real money because thousands of nodes repeat your work. A plain ETH transfer always costs exactly <b>21,000</b> gas.</p>
+<p>The biggest costs are in storage, because every node must keep that data for ever. The first time a transaction touches a slot it is <b>cold</b> (2,100 extra); after that it is <b>warm</b> (100), from EIP-2929.</p>
+<table>
+  <tr><th>SSTORE write (cold slot)</th><th class="r">Gas</th><th>Why</th></tr>
+  <tr><td>0 → x (new value)</td><td class="r">22,100</td><td>A new 32-byte value every node must keep</td></tr>
+  <tr><td>x → y (change)</td><td class="r">5,000</td><td>The slot already exists</td></tr>
+  <tr><td>x → x (no change)</td><td class="r">2,200</td><td>You only pay for the access</td></tr>
+  <tr><td>x → 0 (clear)</td><td class="r">5,000 − 4,800 refund</td><td>Freeing state is rewarded (EIP-3529: refund ≤ ⅕ of gas used)</td></tr>
+</table>
+
+<h3>Step 5 — Storage: a wall of lockers</h3>
+<p>A contract has 2<sup>256</sup> lockers (slots) of 32 bytes, all zero until written. Solidity fills them in the order variables are declared and <b>packs</b> small values into one slot when they fit. Mappings and dynamic arrays cannot be stored in order (they can grow without limit), so their items are placed at <code>keccak256</code> addresses where they will never collide.</p>
+<div class="fig">
+<svg viewBox="0 0 640 175" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Inter" font-size="10.5">
+  <g stroke="#0B1F3A" stroke-width="1">
+    <rect x="10" y="8" width="300" height="28" rx="3" fill="#f3f6fa"/>
+    <rect x="10" y="40" width="150" height="28" rx="3" fill="#cff6fc"/><rect x="160" y="40" width="150" height="28" rx="3" fill="#f3f6fa"/>
+    <rect x="10" y="72" width="80" height="28" rx="3" fill="#f3f6fa"/><rect x="90" y="72" width="14" height="28" fill="#cff6fc"/><rect x="104" y="72" width="206" height="28" rx="3" fill="#f3f6fa"/>
+    <rect x="10" y="104" width="300" height="28" rx="3" fill="#ffffff" stroke-dasharray="4 3"/>
+    <rect x="10" y="136" width="300" height="28" rx="3" fill="#f3f6fa"/>
+    <rect x="410" y="104" width="225" height="28" rx="3" fill="#0B1F3A"/><rect x="410" y="136" width="225" height="28" rx="3" fill="#0B1F3A"/>
+  </g>
+  <g fill="#0B1F3A">
+    <text x="20" y="26">counter = 1 (32 bytes)</text>
+    <text x="20" y="58">big = 9 (16 B)</text><text x="170" y="58">small = 7 (16 B)</text>
+    <text x="20" y="90" font-size="9">(unused)</text><text x="114" y="90">owner 0xf39f… (20 B) · paused (1 B)</text>
+    <text x="20" y="122" fill="#5b6578">empty on purpose (mapping)</text>
+    <text x="20" y="154">items.length = 2</text>
+  </g>
+  <g fill="#5b6578" font-weight="600"><text x="318" y="26">slot 0</text><text x="318" y="58">slot 1</text><text x="318" y="90">slot 2</text><text x="318" y="122">slot 3</text><text x="318" y="154">slot 4</text></g>
+  
+  <g fill="#22D3EE" font-weight="600"><text x="420" y="122">keccak256(Ram, 3) → 500 wei</text><text x="420" y="154">keccak256(4) + 1 → items[1] = 22</text></g>
+  <g stroke="#22D3EE" stroke-width="1.5" fill="none" stroke-dasharray="4 3"><path d="M360 118 H405"/><path d="M360 150 H405"/></g>
+</svg>
+<div class="cap">Figure 2 — Real storage of Layout.sol read with eth_getStorageAt. Packed values share a slot; mappings and arrays are scattered by keccak256.</div>
+</div>
+
+<h2>Key code walkthrough</h2>
+<h3>1. The gas price list (src/evm.js)</h3>
+<pre><span class="c">// Mainnet gas constants. Storage is priced 1,000× higher than arithmetic.</span>
+zero: 0, base: 2, verylow: 3, low: 5, mid: 8, high: 10, jumpdest: 1,
+coldSload: 2100, warmRead: 100, sset: 20000, sreset: 2900, clearRefund: 4800,
+const MAX_GAS = 30_000_000;  <span class="c">// one block; also caps memory at ~4 MB (QA fix M1)</span></pre>
+<h3>2. Cold vs warm inside SSTORE</h3>
+<pre><span class="c">// First touch of a slot in this transaction adds the cold surcharge, then it is warm.</span>
+if (!s.warm.has(key)) { s.warm.add(key); cost += G.coldSload; }
+if (value === 0n) s.refund += G.clearRefund;     <span class="c">// clearing a slot earns a refund</span>
+<span class="c">// at the end: refund is capped at 1/5 of the gas used (EIP-3529)</span>
+const refund = Math.min(Math.max(s.refund, 0), Math.floor(raw / G.maxRefundQuotient));</pre>
+<h3>3. Finding a variable in storage (src/storage.js)</h3>
+<pre><span class="c">// balances[key] when the mapping is declared at `slot`</span>
+function mappingSlot(keyType, key, slot) {
+  return BigInt(keccak256(coder.encode([keyType, "uint256"], [key, slot])));
+}
+<span class="c">// items[i] when the array is declared at `slot`: keccak256(slot) + i</span>
+function arraySlot(slot, index) {
+  const start = BigInt(keccak256(zeroPadValue(toBeHex(slot), 32)));
+  return (start + BigInt(index)) % (1n &lt;&lt; 256n);
+}
+<span class="c">// read a packed field: shift right by its offset, keep `size` bytes</span>
+function unpack(word, offset, size) {
+  return (getBigInt(word) &gt;&gt; BigInt(8 * offset)) &amp; ((1n &lt;&lt; BigInt(8 * size)) - 1n);
+}</pre>
+<h3>4. The contract that shows the layout (contracts/Layout.sol)</h3>
+<pre>uint256 public counter;               <span class="c">// slot 0</span>
+uint128 public small; uint128 public big;  <span class="c">// slot 1, packed: small low 16 B, big high 16 B</span>
+address public owner; bool public paused;  <span class="c">// slot 2, packed: 20 + 1 bytes</span>
+mapping(address =&gt; uint256) public balances; <span class="c">// slot 3 stays empty</span>
+uint256[] public items;              <span class="c">// slot 4 = length</span></pre>
+
+<h2>Results from my run</h2>
+<table>
+  <tr><th>What I measured</th><th>Result</th></tr>
+  <tr><td>Sita sends Ram 1 ETH</td><td>21,000 gas × 1.875 gwei = fee 0.000039375 ETH; nonce now 1</td></tr>
+  <tr><td>Predicted vs real contract address</td><td>0xe7f1725E…0512 — <b>match</b></td></tr>
+  <tr><td>Deploying Layout.sol</td><td>736,081 gas, 2,952 bytes of code</td></tr>
+  <tr><td><code>increment()</code> 0 → 1, then 1 → 2</td><td>43,567 gas, then 26,467 gas — <b>39% cheaper</b> the second time</td></tr>
+  <tr><td>"2 + 3, store, read, return" on my mini-EVM vs Hardhat</td><td>43,230 vs 43,230 gas — <b>match</b>, returned 5</td></tr>
+  <tr><td>Differential fuzz test</td><td>150 random programs, 10,134 opcode steps in 300 transactions — every step's gas identical</td></tr>
+  <tr><td>Quality</td><td>45 / 45 tests pass, lint clean, npm audit 0, Slither 0 high/medium/low</td></tr>
+</table>
+<p>Two surprises: the same function costs much less the second time (the first call <i>creates</i> a value, the second only <i>changes</i> it), and <code>SLOAD</code> right after <code>SSTORE</code> costs just 100, because the slot is already warm.</p>
+
+<h2>QA &amp; security findings</h2>
+<table>
+  <tr><th>ID</th><th>Severity</th><th>Found by</th><th>Problem in plain words</th><th>Fix</th></tr>
+  <tr><td>M1</td><td class="sev-m">Medium</td><td>Manual</td><td>No upper gas limit: one MSTORE could make Node try to allocate 4 GB of memory.</td><td>gasLimit must be 21,000 – 30,000,000 (one block).</td></tr>
+  <tr><td>D1</td><td class="sev-l">Low</td><td>Differential test</td><td>Running off the end of code: the real EVM records an implicit STOP, mine did not.</td><td>Record the implicit STOP.</td></tr>
+  <tr><td>L1</td><td class="sev-l">Low</td><td>Manual</td><td>A long loop could keep millions of trace steps in memory.</td><td>Keep at most 100,000 steps, flag <code>traceTruncated</code>.</td></tr>
+  <tr><td>L2</td><td class="sev-l">Low</td><td>Manual</td><td>Storage with Number keys (0 instead of 0n) silently read as zero.</td><td>Require <code>Map&lt;bigint, bigint&gt;</code>.</td></tr>
+  <tr><td>L3</td><td class="sev-l">Low</td><td>Manual</td><td>Code starting with 0xEF was accepted though every chain refuses it (EIP-3541).</td><td>Refuse it up front with a clear error.</td></tr>
+</table>
+<p>Also attacked and found safe: re-entering <code>withdraw</code>, owner-only functions, overflow, replay across chains (EIP-155) and with a used nonce, jumps into PUSH data, and ETH forced in by <code>selfdestruct</code>.</p>
+
+<h2>Common mistakes</h2>
+<ul>
+  <li><b>Thinking gas price = gas.</b> Gas measures work; the price per unit changes with demand. Fee = gas used × gas price.</li>
+  <li><b>Forgetting the first write is expensive.</b> Setting a slot from 0 costs 22,100; designs that create many new slots get costly fast.</li>
+  <li><b>Reordering variables in an upgradeable contract.</b> The slot numbers move and old data is read as the wrong thing (Day 11).</li>
+  <li><b>Trusting a model you never compared with reality.</b> My unit tests passed; only the differential test caught D1.</li>
+  <li><b>Using <code>transfer</code> to send ETH.</b> Its 2,300-gas limit breaks smart-contract wallets; use <code>call</code> and check the result.</li>
+</ul>
+
+<h2>Interview questions</h2>
+<div class="qa">
+<p><b>1. Why does the EVM need gas at all?</b><br>Without it a single loop could freeze every node for ever. Gas makes every step cost something, so loops end and people pay for the work they ask the network to do.</p>
+<p><b>2. Where does Solidity store <code>balances[alice]</code> if the mapping is declared at slot 3?</b><br>At <code>keccak256(abi.encode(alice, 3))</code>. Slot 3 itself stays empty.</p>
+<p><b>3. Why does the second <code>increment()</code> cost less than the first?</b><br>The first changes the slot from zero (a new value, 20,000 + cold 2,100); the second only changes an existing value (2,900 + cold 2,100).</p>
+<p><b>4. What is the difference between an EOA and a contract account?</b><br>An EOA is controlled by a private key and can start transactions; a contract account is controlled by its code, has storage, and only runs when called.</p>
+<p><b>5. How can you be sure a home-made EVM is correct?</b><br>Differential testing: run the same random programs on it and on a reference EVM, and require identical gas at every step, the same storage and the same output.</p>
+</div>
+
+<h2>Exercises</h2>
+<table>
+  <tr><th>Level</th><th>Goal</th><th>Hint</th></tr>
+  <tr><td>Easy</td><td>Read <code>small</code> and <code>big</code> from packed slot 1. Expected: 7 and 9.</td><td><code>unpack(word, 0, 16)</code> and <code>unpack(word, 16, 16)</code>; the first variable sits at the low end.</td></tr>
+  <tr><td>Medium</td><td>Write to slot 0, read it twice, return it; then clear it.</td><td>Look at the trace: first access 2,100 extra, then 100. Check the refund cap of ⅕.</td></tr>
+  <tr><td>Challenge</td><td>Add <code>MUL</code> or <code>AND</code> to the mini-EVM.</td><td>Unit-test stack, gas and 256-bit wrapping, then add a differential test against Hardhat.</td></tr>
+</table>
+
+<div class="box">
+<h3>Cheat sheet</h3>
+<div class="two"><div>
+<b>Costs to remember</b><br>
+Plain transfer: 21,000<br>
+ADD / PUSH: 3 · MUL: 5<br>
+Cold storage access: +2,100 · warm: 100<br>
+New value 0 → x: 22,100 (cold)<br>
+Clear refund: 4,800, max ⅕ of gas used<br>
+Block limit: 30,000,000
+</div><div>
+<b>Where data lives</b><br>
+Variables: slot 0, 1, 2 … in order<br>
+Small types: packed into one slot<br>
+<code>mapping</code> at slot p: <code>keccak256(key, p)</code><br>
+<code>array</code> at slot p: length at p, item i at <code>keccak256(p) + i</code><br>
+Contract address: <code>keccak256(rlp(sender, nonce))</code>
+</div></div>
+</div>
+
+<h2>References</h2>
+<ol class="refs">
+  <li>Ethereum.org — Ethereum Virtual Machine: https://ethereum.org/en/developers/docs/evm/</li>
+  <li>Ethereum.org — Gas and fees: https://ethereum.org/en/developers/docs/gas/</li>
+  <li>Ethereum Yellow Paper (Appendix G fee schedule, Appendix H instruction set): https://ethereum.github.io/yellowpaper/paper.pdf</li>
+  <li>evm.codes — interactive opcode reference with gas costs: https://www.evm.codes/</li>
+  <li>Solidity docs — Layout of state variables in storage: https://docs.soliditylang.org/en/v0.8.24/internals/layout_in_storage.html</li>
+  <li>EIP-2929 — Gas cost increases for state access opcodes: https://eips.ethereum.org/EIPS/eip-2929</li>
+  <li>EIP-3529 — Reduction in refunds: https://eips.ethereum.org/EIPS/eip-3529</li>
+  <li>EIP-2200 — Structured definitions for net gas metering: https://eips.ethereum.org/EIPS/eip-2200</li>
+  <li>ethers.js v6 documentation: https://docs.ethers.org/v6/</li>
+  <li>Andreas M. Antonopoulos &amp; Gavin Wood, <i>Mastering Ethereum</i>, ch. 13 "The EVM": https://github.com/ethereumbook/ethereumbook</li>
+</ol>
+</body></html>

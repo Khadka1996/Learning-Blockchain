@@ -2,6 +2,10 @@
 
 A public, day-by-day log of mastering blockchain development — from hashing fundamentals to DeFi, upgradeable contracts, Layer 2 and zero-knowledge proofs.
 
+> ### 📘 Free complete study guide (PDF, 84 pages)
+> All 15 days in one book: Ethereum, Solidity smart contracts, ERC-20, NFTs, smart-contract security, DeFi, Layer 2, zero-knowledge proofs and more, explained in plain words with diagrams, tested code, security fixes, interview questions and exercises.
+> **[Download the PDF](guide/Learning-Blockchain-Complete-Study-Guide.pdf)** · [About the guide](guide/)
+
 Each day has its own folder with notes, working code, tests, a QA & security report, and exercises. Mornings cover the concept and code; evenings run QA, fix what breaks, and add exercises.
 
 ### Quality bar for every day

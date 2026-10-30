@@ -1,0 +1,30 @@
+@page { size: A4; margin: 18mm 17mm 18mm 17mm;
+  @bottom-center { content: var(--footer) "Page " counter(page) " of " counter(pages); font: 8pt Inter, sans-serif; color: #8a94a6; } }
+:root { --navy:#0B1F3A; --cyan:#22D3EE; --ink:#1d2433; --muted:#5b6578; --line:#d9dee7; --soft:#f3f6fa; }
+html { font-family: Inter, sans-serif; font-size: 10.5pt; line-height: 1.5; color: var(--ink); }
+body { margin: 0; }
+h1,h2,h3 { color: var(--navy); line-height: 1.25; }
+h2 { font-size: 14pt; margin: 18pt 0 6pt; padding-bottom: 3pt; border-bottom: 1.5pt solid var(--cyan); break-after: avoid; }
+h3 { font-size: 11pt; margin: 11pt 0 3pt; break-after: avoid; }
+p { margin: 0 0 6pt; }
+ul,ol { margin: 0 0 6pt; padding-left: 16pt; } li { margin-bottom: 2pt; }
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.8pt; background: var(--soft); padding: 0 2pt; border-radius: 2pt; }
+pre { font-family: "DejaVu Sans Mono", monospace; font-size: 8pt; line-height: 1.4; background: #0f1b2d; color: #e4ecf7; padding: 8pt 10pt; border-radius: 4pt; border-left: 3pt solid var(--cyan); white-space: pre-wrap; word-break: break-all; break-inside: avoid; margin: 4pt 0 8pt; }
+pre .c { color: #7fdcef; }
+table { width: 100%; border-collapse: collapse; margin: 4pt 0 10pt; font-size: 9pt; break-inside: auto; }
+th { background: var(--navy); color: #fff; text-align: left; font-weight: 600; padding: 4pt 6pt; }
+td { border-bottom: 0.6pt solid var(--line); padding: 4pt 6pt; vertical-align: top; }
+tr { break-inside: avoid; }
+td.r, th.r { text-align: right; }
+.hero { background: var(--navy); color: #fff; border-radius: 6pt; padding: 14pt 16pt 12pt; margin-bottom: 10pt; }
+.badge { display: inline-block; background: var(--cyan); color: var(--navy); font-size: 7.5pt; font-weight: 700; letter-spacing: .5pt; border-radius: 8pt; padding: 1.5pt 7pt; }
+.hero h1 { color: #fff; font-size: 21pt; margin: 6pt 0 3pt; }
+.hero .meta { color: #b9c6db; font-size: 8.5pt; }
+.box { background: var(--soft); border: 0.8pt solid var(--line); border-left: 3pt solid var(--cyan); border-radius: 4pt; padding: 8pt 10pt; margin: 6pt 0 10pt; break-inside: avoid; }
+.box h3 { margin-top: 0; }
+.cap { color: var(--muted); font-size: 8pt; text-align: center; margin: 2pt 0 8pt; }
+.fig { break-inside: avoid; margin: 6pt 0; }
+.qa p { margin-bottom: 4pt; } .qa b { color: var(--navy); }
+.refs li { font-size: 9pt; word-break: break-all; }
+.two { display: flex; gap: 10pt; } .two > div { flex: 1; }
+.sev-m { color: #b45309; font-weight: 700; } .sev-l { color: #2563eb; font-weight: 600; }
